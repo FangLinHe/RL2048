@@ -1,101 +1,177 @@
+from collections import namedtuple
+from re import I
 from RL2048.tile import Tile
 
 from typing import List, Tuple, NamedTuple
+
 
 class Location(NamedTuple):
     x: int
     y: int
 
+
+class MoveResult(NamedTuple):
+    suc: bool
+    score: int
+
+
 class GameEngine:
     def __init__(self, tile: Tile):
         self.tile = tile
-    
+
     def move_up(self) -> bool:
         suc: bool = False
-
-        # move the up-most grids to the first row
-        for x in range(self.tile.width):
-            for y in range(self.tile.height):
-                if self.tile.grids[y][x] > 0:
-                    # Do nothing, already the up-most grid
-                    if y == 0:
-                        break
-
-                    assert self.tile.grids[0][x] == 0
-                    self.tile.grids[0][x] = self.tile.grids[y][x]
-                    self.tile.grids[y][x] = 0
-                    suc = True
-                    break
+        score: int = 0
 
         # merge grids up if values are the same as the grid above
         # and values are added up
-
-        return suc
-    
-    def move_down(self) -> bool:
-        suc: bool = False
-
-        last_row: int = self.tile.height - 1
-        # move the bottom-most grids to the last row
         for x in range(self.tile.width):
-            for y in range(last_row, -1, -1):
+            above = -1
+            y = 0
+            while y < self.tile.height:
                 if self.tile.grids[y][x] > 0:
-                    # Do nothing, already the bottom-most grid
-                    if y == last_row:
-                        break
+                    if (
+                        above == -1
+                        or self.tile.grids[y][x] != self.tile.grids[above][x]
+                    ):
+                        above = y
+                    else:
+                        self.tile.grids[above][x] *= 2
+                        self.tile.grids[y][x] = 0
+                        above = -1
 
-                    assert self.tile.grids[last_row][x] == 0
-                    self.tile.grids[last_row][x] = self.tile.grids[y][x]
+                        suc = True
+                        score += self.tile.grids[above][x]
+                y += 1
+
+        # move all the grids up
+        for x in range(self.tile.width):
+            next_y = 0
+            for y in range(self.tile.height):
+                if self.tile.grids[y][x] == 0:
+                    continue
+
+                self.tile.grids[next_y][x] = self.tile.grids[y][x]
+
+                if next_y != y:
                     self.tile.grids[y][x] = 0
                     suc = True
-                    break
+                next_y += 1
+
+        return suc
+
+    def move_down(self) -> bool:
+        suc: bool = False
+        score: int = 0
 
         # merge grids up if values are the same as the grid below
         # and values are added up
+        last_row = self.tile.height - 1
+        for x in range(self.tile.width):
+            below = -1
+            y = last_row
+            while y >= 0:
+                if self.tile.grids[y][x] > 0:
+                    if (
+                        below == -1
+                        or self.tile.grids[y][x] != self.tile.grids[below][x]
+                    ):
+                        below = y
+                    else:
+                        self.tile.grids[below][x] *= 2
+                        score += self.tile.grids[below][x]
+                        self.tile.grids[y][x] = 0
+                        below = -1
+                y -= 1
+
+        # move all the grids down
+        for x in range(self.tile.width):
+            next_y = last_row
+            for y in range(last_row, -1, -1):
+                if self.tile.grids[y][x] == 0:
+                    continue
+
+                self.tile.grids[next_y][x] = self.tile.grids[y][x]
+
+                if next_y != y:
+                    self.tile.grids[y][x] = 0
+                    suc = True
+                next_y -= 1
 
         return suc
-    
+
     def move_left(self) -> bool:
         suc: bool = False
-
-        # move the left-most grids to the first column
-        for y in range(self.tile.height):
-            for x in range(self.tile.width):
-                if self.tile.grids[y][x] > 0:
-                    # Do nothing, already the left-most grid
-                    if x == 0:
-                        break
-
-                    assert self.tile.grids[y][0] == 0
-                    self.tile.grids[y][0] = self.tile.grids[y][x]
-                    self.tile.grids[y][x] = 0
-                    suc = True
-                    break
+        score: int = 0
 
         # merge grids up if values are the same as the left grid
         # and values are added up
+        for y in range(self.tile.height):
+            left = -1
+            x = 0
+            while x < self.tile.width:
+                if self.tile.grids[y][x] > 0:
+                    if left == -1 or self.tile.grids[y][x] != self.tile.grids[y][left]:
+                        left = x
+                    else:
+                        self.tile.grids[y][left] *= 2
+                        score += self.tile.grids[y][left]
+                        self.tile.grids[y][x] = 0
+                        left = -1
+                x += 1
+
+        # move all the grids left
+        for y in range(self.tile.height):
+            next_x = 0
+            for x in range(self.tile.width):
+                if self.tile.grids[y][x] == 0:
+                    continue
+
+                self.tile.grids[y][next_x] = self.tile.grids[y][x]
+
+                if next_x != x:
+                    self.tile.grids[y][x] = 0
+                    suc = True
+                next_x += 1
 
         return suc
-    
+
     def move_right(self) -> bool:
         suc: bool = False
+        score: int = 0
 
-        last_column: int = self.tile.width - 1
-        # move the right-most grids to the last column
+        # merge grids up if values are the same as the right grid
+        # and values are added up
+        last_col = self.tile.width - 1
         for y in range(self.tile.height):
-            for x in range(last_column, -1, -1):
+            right = -1
+            x = last_col
+            while x >= 0:
                 if self.tile.grids[y][x] > 0:
-                    # Do nothing, already the right-most grid
-                    if x == last_column:
-                        break
+                    if (
+                        right == -1
+                        or self.tile.grids[y][x] != self.tile.grids[y][right]
+                    ):
+                        right = x
+                    else:
+                        self.tile.grids[y][right] *= 2
+                        score += self.tile.grids[y][right]
+                        self.tile.grids[y][x] = 0
+                        right = -1
+                x -= 1
 
-                    assert self.tile.grids[y][last_column] == 0
-                    self.tile.grids[y][last_column] = self.tile.grids[y][x]
+        # move all the grids right
+        for y in range(self.tile.height):
+            next_x = last_col
+            for x in range(last_col, -1, -1):
+                if self.tile.grids[y][x] == 0:
+                    continue
+
+                self.tile.grids[y][next_x] = self.tile.grids[y][x]
+
+                if next_x != x:
                     self.tile.grids[y][x] = 0
                     suc = True
-                    break
-
-        # merge grids up if values are the same as the left grid
-        # and values are added up
+                next_x -= 1
 
         return suc

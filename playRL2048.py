@@ -27,6 +27,8 @@ def main():
                     print(f"Move left suc: {game_engine.move_left()}")
                 elif event.key == pygame.K_RIGHT:
                     print(f"Move right suc: {game_engine.move_right()}")
+                elif event.key == pygame.K_r:
+                    tile.random_start()
                 
                 plotter.plot()
 
