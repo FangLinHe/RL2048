@@ -38,6 +38,7 @@ class PlotProperties(NamedTuple):
     grid_width: int = 100
     grid_height: int = 100
     grid_space: int = 10
+    border_radius: int = 3
 
 
 class TilePlotter:
@@ -54,7 +55,7 @@ class TilePlotter:
             for y in range(self.tile.height)
         ]
 
-        self.font = pygame.font.SysFont("Comic Sans MS", 30)
+        self.font = pygame.font.SysFont("Comic Sans MS", 35)
 
     def window_size(self) -> Tuple[int, int]:
         height = (
@@ -101,7 +102,12 @@ class TilePlotter:
                     if grid_value in color_palette
                     else default_colorset
                 )
-                pygame.draw.rect(self.win, tuple(colorset.background), rect)
+                pygame.draw.rect(
+                    self.win,
+                    tuple(colorset.background),
+                    rect,
+                    border_radius=self.plot_properties.border_radius,
+                )
                 if grid_value != 0:
                     (grid_l, grid_t, grid_w, grid_h) = self.grid_tlwh(x, y)
                     text_surface = self.font.render(
