@@ -20,13 +20,25 @@ def main():
                 exit()
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_UP:
-                    print(f"Move up suc: {game_engine.move_up()}")
+                    move_result = game_engine.move_up()
+                    if move_result.suc:
+                        game_engine.generate_new()
+                    print(f"Move up result: {move_result}")
                 elif event.key == pygame.K_DOWN:
-                    print(f"Move down suc: {game_engine.move_down()}")
+                    move_result = game_engine.move_down()
+                    if move_result.suc:
+                        game_engine.generate_new()
+                    print(f"Move up result: {move_result}")
                 elif event.key == pygame.K_LEFT:
-                    print(f"Move left suc: {game_engine.move_left()}")
+                    move_result = game_engine.move_left()
+                    if move_result.suc:
+                        game_engine.generate_new()
+                    print(f"Move up result: {move_result}")
                 elif event.key == pygame.K_RIGHT:
-                    print(f"Move right suc: {game_engine.move_right()}")
+                    move_result = game_engine.move_right()
+                    if move_result.suc:
+                        game_engine.generate_new()
+                    print(f"Move up result: {move_result}")
                 elif event.key == pygame.K_r:
                     tile.random_start()
                 

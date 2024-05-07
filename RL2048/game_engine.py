@@ -1,5 +1,5 @@
 from collections import namedtuple
-from re import I
+from random import randint, sample
 from RL2048.tile import Tile
 
 from typing import List, Tuple, NamedTuple
@@ -18,8 +18,9 @@ class MoveResult(NamedTuple):
 class GameEngine:
     def __init__(self, tile: Tile):
         self.tile = tile
+        self.score = 0
 
-    def move_up(self) -> bool:
+    def move_up(self) -> MoveResult:
         suc: bool = False
         score: int = 0
 
@@ -58,9 +59,10 @@ class GameEngine:
                     suc = True
                 next_y += 1
 
-        return suc
+        self.score += score
+        return MoveResult(suc, score)
 
-    def move_down(self) -> bool:
+    def move_down(self) -> MoveResult:
         suc: bool = False
         score: int = 0
 
@@ -82,6 +84,9 @@ class GameEngine:
                         score += self.tile.grids[below][x]
                         self.tile.grids[y][x] = 0
                         below = -1
+
+                        suc = True
+                        score += self.tile.grids[below][x]
                 y -= 1
 
         # move all the grids down
@@ -98,9 +103,10 @@ class GameEngine:
                     suc = True
                 next_y -= 1
 
-        return suc
+        self.score += score
+        return MoveResult(suc, score)
 
-    def move_left(self) -> bool:
+    def move_left(self) -> MoveResult:
         suc: bool = False
         score: int = 0
 
@@ -118,6 +124,9 @@ class GameEngine:
                         score += self.tile.grids[y][left]
                         self.tile.grids[y][x] = 0
                         left = -1
+
+                        suc = True
+                        score += self.tile.grids[y][left]
                 x += 1
 
         # move all the grids left
@@ -134,9 +143,10 @@ class GameEngine:
                     suc = True
                 next_x += 1
 
-        return suc
+        self.score += score
+        return MoveResult(suc, score)
 
-    def move_right(self) -> bool:
+    def move_right(self) -> MoveResult:
         suc: bool = False
         score: int = 0
 
@@ -158,6 +168,9 @@ class GameEngine:
                         score += self.tile.grids[y][right]
                         self.tile.grids[y][x] = 0
                         right = -1
+
+                        suc = True
+                        score += self.tile.grids[y][right]
                 x -= 1
 
         # move all the grids right
@@ -174,4 +187,24 @@ class GameEngine:
                     suc = True
                 next_x -= 1
 
-        return suc
+        self.score += score
+        return MoveResult(suc, score)
+
+    def find_empty_grids(self) -> List[Location]:
+        empty_grids: List[Location] = []
+        for y, grid_row in enumerate(self.tile.grids):
+            for x, grid in enumerate(grid_row):
+                if grid == 0:
+                    empty_grids.append(Location(x, y))
+            
+        return empty_grids
+
+    def generate_new(self) -> bool:
+        empty_grids: List[Location] = self.find_empty_grids()
+        if len(empty_grids) == 0:
+            return False
+
+        des: Location = sample(empty_grids, 1)[0]
+        self.tile.grids[des.y][des.x] = 2 ** randint(1, 2)
+
+        return True
