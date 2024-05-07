@@ -23,10 +23,6 @@ class TilePlotter:
         ]
 
         self.font = pygame.font.SysFont("Comic Sans MS", 30)
-        self.text_surfaces: List[List[pygame.Surface]] = [
-            [self.font.render("", True, (20, 20, 20)) for _x in range(self.tile.width)]
-            for _y in range(self.tile.height)
-        ]
 
     def window_size(self) -> Tuple[int, int]:
         height = (
@@ -75,7 +71,6 @@ class TilePlotter:
                     text_rect = text_surface.get_rect(
                         center=(grid_l + grid_w / 2, grid_t + grid_h / 2)
                     )
-                    print(f"x: {x}, y: {y}, v: {grid_value}, rect: {text_rect}")
                     self.win.blit(text_surface, text_rect)
 
         pygame.display.update()
