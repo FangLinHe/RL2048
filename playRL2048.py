@@ -28,17 +28,17 @@ def main():
                     move_result = game_engine.move_down()
                     if move_result.suc:
                         game_engine.generate_new()
-                    print(f"Move up result: {move_result}")
+                    print(f"Move down result: {move_result}")
                 elif event.key == pygame.K_LEFT:
                     move_result = game_engine.move_left()
                     if move_result.suc:
                         game_engine.generate_new()
-                    print(f"Move up result: {move_result}")
+                    print(f"Move left result: {move_result}")
                 elif event.key == pygame.K_RIGHT:
                     move_result = game_engine.move_right()
                     if move_result.suc:
                         game_engine.generate_new()
-                    print(f"Move up result: {move_result}")
+                    print(f"Move right result: {move_result}")
                 elif event.key == pygame.K_r:
                     tile.random_start()
                 

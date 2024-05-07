@@ -1,4 +1,5 @@
 import pygame
+from RL2048.common import Location
 from RL2048.tile import Tile
 from typing import Dict, List, NamedTuple, Tuple
 
@@ -39,6 +40,28 @@ class PlotProperties(NamedTuple):
     grid_height: int = 100
     grid_space: int = 10
     border_radius: int = 3
+    animation_steps: int = 10
+
+
+class Animation:
+    def __init__(self, old_value: int, src: Location, dst: Location, step: int = 10):
+        self.old_value = old_value
+        self.src = src
+        self.dst = dst
+        self.diff = Location(dst.x - src.x, dst.y - src.y)
+        self.step = step
+        self.count = 0
+
+    def next_location(self) -> Location:
+        if self.count > self.step:
+            return self.dst
+        move_ratio = self.count / (self.step + 1)
+        new_location = Location(
+            self.src.x + round(self.diff.x * move_ratio),
+            self.src.y + round(self.diff.y * move_ratio),
+        )
+        self.count += 1
+        return new_location
 
 
 class TilePlotter:
@@ -50,6 +73,7 @@ class TilePlotter:
 
         self.win = pygame.display.set_mode((self.window_size()))
         self.win.fill(win_background_color)
+        self.clock = pygame.time.Clock()
         self.rects: List[List[pygame.Rect]] = [
             [pygame.Rect(*self.grid_tlwh(x, y)) for x in range(self.tile.width)]
             for y in range(self.tile.height)

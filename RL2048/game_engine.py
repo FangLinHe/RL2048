@@ -1,13 +1,9 @@
 from collections import namedtuple
 from random import randint, sample
+from RL2048.common import Location
 from RL2048.tile import Tile
 
-from typing import List, Tuple, NamedTuple
-
-
-class Location(NamedTuple):
-    x: int
-    y: int
+from typing import List, NamedTuple
 
 
 class MoveResult(NamedTuple):
@@ -38,11 +34,11 @@ class GameEngine:
                         above = y
                     else:
                         self.tile.grids[above][x] *= 2
+                        score += self.tile.grids[above][x]
                         self.tile.grids[y][x] = 0
                         above = -1
 
                         suc = True
-                        score += self.tile.grids[above][x]
                 y += 1
 
         # move all the grids up
@@ -86,7 +82,6 @@ class GameEngine:
                         below = -1
 
                         suc = True
-                        score += self.tile.grids[below][x]
                 y -= 1
 
         # move all the grids down
@@ -126,7 +121,6 @@ class GameEngine:
                         left = -1
 
                         suc = True
-                        score += self.tile.grids[y][left]
                 x += 1
 
         # move all the grids left
@@ -170,7 +164,6 @@ class GameEngine:
                         right = -1
 
                         suc = True
-                        score += self.tile.grids[y][right]
                 x -= 1
 
         # move all the grids right
