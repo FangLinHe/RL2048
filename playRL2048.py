@@ -41,7 +41,7 @@ def main():
                     print(f"Move right result: {move_result}")
                 elif event.key == pygame.K_r:
                     tile.random_start()
-                
+
                 plotter.plot()
 
 

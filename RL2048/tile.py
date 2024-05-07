@@ -1,5 +1,5 @@
 from random import randint, sample
-from typing import List, Tuple
+from typing import List
 
 
 class Tile:
@@ -8,7 +8,6 @@ class Tile:
         self.height: int = height
         self.grids: List[List[int]] = []
         self.random_start()
-        # self.indices: List[int] = list(range(self.width * self.height))
 
     def random_start(self):
         self.grids = [[0 for _x in range(self.width)] for _y in range(self.height)]
