@@ -40,7 +40,7 @@ def main():
                         game_engine.generate_new()
                     print(f"Move right result: {move_result}")
                 elif event.key == pygame.K_r:
-                    tile.random_start()
+                    game_engine.reset()
 
                 plotter.plot()
 

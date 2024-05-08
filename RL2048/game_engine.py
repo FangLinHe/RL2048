@@ -15,6 +15,10 @@ class GameEngine:
     def __init__(self, tile: Tile):
         self.tile = tile
         self.score = 0
+        
+    def reset(self):
+        self.tile.random_start()
+        self.score = 0
 
     def move_up(self) -> MoveResult:
         suc: bool = False
