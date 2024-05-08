@@ -11,7 +11,7 @@ class PlotProperties(NamedTuple):
     grid_height: int = 100
     grid_space: int = 10
     border_radius: int = 3
-    animation_steps: int = 10
+    animation_steps: int = 6
 
 
 class Animation:
@@ -128,6 +128,7 @@ class TilePlotter:
             for grid in grids
         ]
         moving_locations = {a.grid.dst_loc for a in animations if a.grid.dst_loc != a.grid.src_loc}
+        print(f"Moving locations: {moving_locations}")
         self.tile.animation_grids = defaultdict(list)
 
         src_rects = [
@@ -168,12 +169,9 @@ class TilePlotter:
                     ))
                     rect.move_ip(dx, dy)
                     val = animation.grid.dst_val if t == steps - 1 else animation.grid.src_val
-                    if val > 0:
-                        print(f"a {val}")
                     self.plot_grid(val, rect, tlwh)
-                # pygame.display.update(affected_areas)
-                pygame.display.update()
-                self.clock.tick(100)
+                pygame.display.update(affected_areas)
+                self.clock.tick(60)
 
 
         # Plot all grids after the animation
@@ -182,7 +180,5 @@ class TilePlotter:
             for x, rect in enumerate(rects_row):
                 grid_value = self.tile.grids[y][x]
                 self.plot_grid(grid_value, rect, self.grid_tlwh(x, y))
-                if grid_value > 0:
-                    print(f"b {grid_value}")
         pygame.display.update()
-        self.clock.tick(100)
+        self.clock.tick(60)
