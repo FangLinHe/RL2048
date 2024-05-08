@@ -171,7 +171,7 @@ class TilePlotter:
                     val = animation.grid.dst_val if t == steps - 1 else animation.grid.src_val
                     self.plot_grid(val, rect, tlwh)
                 pygame.display.update(affected_areas)
-                self.clock.tick(60)
+                self.clock.tick(120)
 
 
         # Plot all grids after the animation
@@ -181,4 +181,4 @@ class TilePlotter:
                 grid_value = self.tile.grids[y][x]
                 self.plot_grid(grid_value, rect, self.grid_tlwh(x, y))
         pygame.display.update()
-        self.clock.tick(60)
+        self.clock.tick(120)
