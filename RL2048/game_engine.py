@@ -290,6 +290,8 @@ class GameEngine:
             return False
 
         des: Location = sample(empty_grids, 1)[0]
-        self.tile.grids[des.y][des.x] = 2 ** randint(1, 2)
+        val: int = 2 ** randint(1, 2)
+        self.tile.grids[des.y][des.x] = val
+        self.tile.animation_grids[des].append(MovingGrid(des, 0, des, val))
 
         return True
