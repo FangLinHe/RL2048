@@ -1,7 +1,8 @@
 import pygame
 import RL2048.colors as colors
 from RL2048.common import Location
-from RL2048.tile import Tile
+from RL2048.tile import MovingGrid, Tile
+from collections import defaultdict
 from typing import Dict, List, NamedTuple, Tuple
 
 
@@ -14,21 +15,23 @@ class PlotProperties(NamedTuple):
 
 
 class Animation:
-    def __init__(self, old_value: int, src: Location, dst: Location, step: int = 10):
-        self.old_value = old_value
-        self.src = src
-        self.dst = dst
-        self.diff = Location(dst.x - src.x, dst.y - src.y)
+    def __init__(
+        self, grid: MovingGrid, src_coord: Location, dst_coord: Location, step: int = 10
+    ):
+        self.grid = grid
+        self.src_coord = src_coord
+        self.dst_coord = dst_coord
+        self.diff = Location(dst_coord.x - src_coord.x, dst_coord.y - src_coord.y)
         self.step = step
         self.count = 0
 
     def next_location(self) -> Location:
-        if self.count > self.step:
-            return self.dst
-        move_ratio = self.count / (self.step + 1)
+        if self.count >= self.step:
+            return self.dst_coord
+        move_ratio = self.count / (self.step - 1)
         new_location = Location(
-            self.src.x + round(self.diff.x * move_ratio),
-            self.src.y + round(self.diff.y * move_ratio),
+            self.src_coord.x + round(self.diff.x * move_ratio),
+            self.src_coord.y + round(self.diff.y * move_ratio),
         )
         self.count += 1
         return new_location
@@ -40,6 +43,7 @@ class TilePlotter:
         self.plot_properties: PlotProperties = plot_properties
 
         pygame.init()
+        self.clock = pygame.time.Clock()
 
         self.win = pygame.display.set_mode((self.window_size()))
         self.win.fill(colors.win_background_color)
@@ -79,6 +83,9 @@ class TilePlotter:
 
         return top
 
+    def grid_tl(self, xy: Location) -> Location:
+        return Location(self.grid_left(xy.x), self.grid_top(xy.y))
+
     def grid_tlwh(self, x, y) -> Tuple[int, int, int, int]:
         return (
             self.grid_left(x),
@@ -87,29 +94,95 @@ class TilePlotter:
             self.plot_properties.grid_height,
         )
 
+    def plot_grid(
+        self, grid_value: int, rect: pygame.Rect, tlwh: Tuple[int, int, int, int]
+    ):
+        colorset = (
+            colors.color_palette[grid_value]
+            if grid_value in colors.color_palette
+            else colors.default_colorset
+        )
+        pygame.draw.rect(
+            self.win,
+            tuple(colorset.background),
+            rect,
+            border_radius=self.plot_properties.border_radius,
+        )
+        if grid_value != 0:
+            grid_l, grid_t, grid_w, grid_h = tlwh
+            text_surface = self.font.render(f"{grid_value}", True, colorset.foreground)
+            text_rect = text_surface.get_rect(
+                center=(grid_l + grid_w / 2, grid_t + grid_h / 2)
+            )
+            self.win.blit(text_surface, text_rect)
+
     def plot(self):
+        animations = [
+            Animation(
+                grid,
+                self.grid_tl(grid.src_loc),
+                self.grid_tl(grid.dst_loc),
+                self.plot_properties.animation_steps,
+            )
+            for grids in self.tile.animation_grids.values()
+            for grid in grids
+        ]
+        moving_locations = {a.grid.dst_loc for a in animations if a.grid.dst_loc != a.grid.src_loc}
+        self.tile.animation_grids = defaultdict(list)
+
+        src_rects = [
+            pygame.Rect(*self.grid_tlwh(*animation.grid.src_loc))
+            for animation in animations
+        ]
+        grid_w, grid_h = (
+            self.plot_properties.grid_width,
+            self.plot_properties.grid_height,
+        )
+
+        if len(moving_locations) > 0:
+            steps: int = self.plot_properties.animation_steps
+            for t in range(steps):
+                # Plot non-moving grids
+                self.win.fill(colors.win_background_color)
+                for y, rects_row in enumerate(self.rects):
+                    for x, rect in enumerate(rects_row):
+                        if Location(x, y) not in moving_locations:
+                            grid_value = self.tile.grids[y][x]
+                            self.plot_grid(grid_value, rect, self.grid_tlwh(x, y))
+                        else:
+                            self.plot_grid(0, rect, self.grid_tlwh(x, y))
+                pygame.display.update()
+
+                # Plot moving grids
+                affected_areas: List[pygame.Rect] = []
+                for animation, rect in zip(animations, src_rects):
+                    loc = animation.next_location()
+                    tlwh = (*loc, grid_w, grid_h)
+                    dx = loc.x - rect.x
+                    dy = loc.y - rect.y
+                    affected_areas.append(pygame.Rect(
+                        rect.left if dx > 0 else rect.left + dx,
+                        rect.top if dy > 0 else rect.top + dy,
+                        rect.width + abs(dx),
+                        rect.height + abs(dy)
+                    ))
+                    rect.move_ip(dx, dy)
+                    val = animation.grid.dst_val if t == steps - 1 else animation.grid.src_val
+                    if val > 0:
+                        print(f"a {val}")
+                    self.plot_grid(val, rect, tlwh)
+                # pygame.display.update(affected_areas)
+                pygame.display.update()
+                self.clock.tick(100)
+
+
+        # Plot all grids after the animation
+        self.win.fill(colors.win_background_color)
         for y, rects_row in enumerate(self.rects):
             for x, rect in enumerate(rects_row):
                 grid_value = self.tile.grids[y][x]
-                colorset = (
-                    colors.color_palette[grid_value]
-                    if grid_value in colors.color_palette
-                    else colors.default_colorset
-                )
-                pygame.draw.rect(
-                    self.win,
-                    tuple(colorset.background),
-                    rect,
-                    border_radius=self.plot_properties.border_radius,
-                )
-                if grid_value != 0:
-                    (grid_l, grid_t, grid_w, grid_h) = self.grid_tlwh(x, y)
-                    text_surface = self.font.render(
-                        f"{grid_value}", True, colorset.foreground
-                    )
-                    text_rect = text_surface.get_rect(
-                        center=(grid_l + grid_w / 2, grid_t + grid_h / 2)
-                    )
-                    self.win.blit(text_surface, text_rect)
-
+                self.plot_grid(grid_value, rect, self.grid_tlwh(x, y))
+                if grid_value > 0:
+                    print(f"b {grid_value}")
         pygame.display.update()
+        self.clock.tick(100)

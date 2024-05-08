@@ -1,7 +1,7 @@
 from collections import namedtuple
 from random import randint, sample
 from RL2048.common import Location
-from RL2048.tile import Tile
+from RL2048.tile import MovingGrid, Tile
 
 from typing import List, NamedTuple
 
@@ -31,12 +31,20 @@ class GameEngine:
             y = 0
             while y < self.tile.height:
                 if self.tile.grids[y][x] > 0:
+                    # Candidate to be merged
                     if (
                         above == -1
                         or self.tile.grids[y][x] != self.tile.grids[above][x]
                     ):
                         above = y
+                    # Merged with the grid above
                     else:
+                        src_loc = Location(x, y)
+                        dst_loc = Location(x, above)
+                        val = self.tile.grids[above][x]
+                        self.tile.animation_grids[dst_loc].append(MovingGrid(dst_loc, val, dst_loc, 0)) # Disappear after merging
+                        self.tile.animation_grids[dst_loc].append(MovingGrid(src_loc, val, dst_loc, val*2)) # Twice after merging
+
                         self.tile.grids[above][x] *= 2
                         score += self.tile.grids[above][x]
                         self.tile.grids[y][x] = 0
@@ -52,9 +60,22 @@ class GameEngine:
                 if self.tile.grids[y][x] == 0:
                     continue
 
-                self.tile.grids[next_y][x] = self.tile.grids[y][x]
-
                 if next_y != y:
+                    src_loc = Location(x, y)
+                    dst_loc = Location(x, next_y)
+                    val = self.tile.grids[y][x]
+                    if src_loc in self.tile.animation_grids:
+                        # update destination location
+                        assert dst_loc not in self.tile.animation_grids
+                        self.tile.animation_grids[dst_loc] = [
+                            MovingGrid(grid.src_loc, grid.src_val, dst_loc, grid.dst_val) \
+                                for grid in self.tile.animation_grids[src_loc] 
+                        ]
+                        del self.tile.animation_grids[src_loc]
+                    else:
+                        self.tile.animation_grids[dst_loc].append(MovingGrid(src_loc, val, dst_loc, val))
+
+                    self.tile.grids[next_y][x] = self.tile.grids[y][x]
                     self.tile.grids[y][x] = 0
                     suc = True
                 next_y += 1
