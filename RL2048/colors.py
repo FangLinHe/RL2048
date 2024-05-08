@@ -17,6 +17,7 @@ dark_foreground: Color = Color(117, 110, 102)
 
 default_colorset = ColorSet(Color(128, 128, 128), light_foreground)
 win_background_color: Color = Color(185, 173, 161)
+info_board_color: Color = Color(249, 247, 237)
 
 color_palette: Dict[int, ColorSet] = {
     0: ColorSet(Color(202, 193, 181), dark_foreground),

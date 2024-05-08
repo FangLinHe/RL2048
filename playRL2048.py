@@ -11,7 +11,7 @@ def main():
     plot_properties: PlotProperties = PlotProperties()
     plotter: TilePlotter = TilePlotter(tile, plot_properties)
     game_engine: GameEngine = GameEngine(tile)
-    plotter.plot()
+    plotter.plot(game_engine.score)
 
     while True:
         for event in pygame.event.get():
@@ -42,7 +42,7 @@ def main():
                 elif event.key == pygame.K_r:
                     game_engine.reset()
 
-                plotter.plot()
+                plotter.plot(game_engine.score)
 
 
 if __name__ == "__main__":
