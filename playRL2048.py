@@ -19,30 +19,34 @@ def main():
                 pygame.quit()
                 exit()
             elif event.type == pygame.KEYUP:
-                if event.key == pygame.K_UP:
-                    move_result = game_engine.move_up()
-                    if move_result.suc:
-                        game_engine.generate_new()
-                    print(f"Move up result: {move_result}")
-                elif event.key == pygame.K_DOWN:
-                    move_result = game_engine.move_down()
-                    if move_result.suc:
-                        game_engine.generate_new()
-                    print(f"Move down result: {move_result}")
-                elif event.key == pygame.K_LEFT:
-                    move_result = game_engine.move_left()
-                    if move_result.suc:
-                        game_engine.generate_new()
-                    print(f"Move left result: {move_result}")
-                elif event.key == pygame.K_RIGHT:
-                    move_result = game_engine.move_right()
-                    if move_result.suc:
-                        game_engine.generate_new()
-                    print(f"Move right result: {move_result}")
-                elif event.key == pygame.K_r:
+                if event.key == pygame.K_r:
                     game_engine.reset()
+                if not game_engine.game_is_over:
+                    if event.key == pygame.K_UP:
+                        move_result = game_engine.move_up()
+                        if move_result.suc:
+                            game_engine.generate_new()
+                        print(f"Move up result: {move_result}")
+                    elif event.key == pygame.K_DOWN:
+                        move_result = game_engine.move_down()
+                        if move_result.suc:
+                            game_engine.generate_new()
+                        print(f"Move down result: {move_result}")
+                    elif event.key == pygame.K_LEFT:
+                        move_result = game_engine.move_left()
+                        if move_result.suc:
+                            game_engine.generate_new()
+                        print(f"Move left result: {move_result}")
+                    elif event.key == pygame.K_RIGHT:
+                        move_result = game_engine.move_right()
+                        if move_result.suc:
+                            game_engine.generate_new()
+                        print(f"Move right result: {move_result}")
 
-                plotter.plot(game_engine.score)
+                    plotter.plot(game_engine.score)
+                    if game_engine.game_is_over:
+                        print(f"Game over, score: {game_engine.score}")
+                        plotter.plot_game_over()
 
 
 if __name__ == "__main__":

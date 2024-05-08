@@ -211,4 +211,17 @@ class TilePlotter:
         self.win.blit(self.game_surface, (0, self.plot_properties.info_board_height))
         self.plot_score(score)
         pygame.display.update()
-        self.clock.tick(self.plot_properties.fps)
+        # self.clock.tick(self.plot_properties.fps)
+
+    def plot_game_over(self):
+        game_over_rect = pygame.Rect(0, 0, self.game_surface.get_width(), self.game_surface.get_height())
+        game_over_surface = pygame.Surface(game_over_rect.size, pygame.SRCALPHA)
+        game_over_surface.fill((255, 255, 255, 128))
+        self.game_surface.blit(game_over_surface, (0, 0))
+        text_surface = self.score_font.render(f"Game over, press R to restart", True, colors.dark_foreground)
+        text_rect = text_surface.get_rect(
+            center=game_over_rect.center
+        )
+        self.game_surface.blit(text_surface, text_rect)
+        self.win.blit(self.game_surface, (0, self.plot_properties.info_board_height))
+        pygame.display.update()

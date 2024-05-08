@@ -15,10 +15,12 @@ class GameEngine:
     def __init__(self, tile: Tile):
         self.tile = tile
         self.score = 0
+        self.game_is_over: bool = False
         
     def reset(self):
         self.tile.random_start()
         self.score = 0
+        self.game_is_over = False
 
     def move_up(self) -> MoveResult:
         suc: bool = False
@@ -293,5 +295,21 @@ class GameEngine:
         val: int = 2 ** randint(1, 2)
         self.tile.grids[des.y][des.x] = val
         self.tile.animation_grids[des].append(MovingGrid(des, 0, des, val))
+
+        self.game_is_over = self.game_over()
+        return True
+
+    def game_over(self) -> bool:
+        for y, grid_row in enumerate(self.tile.grids):
+            for x, grid in enumerate(grid_row):
+                # Still having empty space, game is not over yet
+                if grid == 0:
+                    return False
+                # Same as neighbor on the right
+                if x < self.tile.width - 1 and grid == self.tile.grids[y][x + 1]:
+                    return False
+                # Same as neighbor below
+                if y < self.tile.height - 1 and grid == self.tile.grids[y + 1][x]:
+                    return False
 
         return True
