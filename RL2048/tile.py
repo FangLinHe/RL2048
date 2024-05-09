@@ -20,7 +20,7 @@ class Tile:
 
     def random_start(self):
         self.grids = [[0 for _x in range(self.width)] for _y in range(self.height)]
-        self.animation_grids = defaultdict(list)
+        self.reset_animation_grids()
 
         def fill_grid(index):
             loc = Location(x=index % self.width, y=index // self.width)
@@ -33,3 +33,9 @@ class Tile:
         assert len(set(random_indices)) == random_count
         for index in random_indices:
             fill_grid(index)
+
+    def max_grid(self) -> int:
+        return max(r for rows in self.grids for r in rows)
+
+    def reset_animation_grids(self):
+        self.animation_grids = defaultdict(list)

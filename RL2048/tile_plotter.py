@@ -153,7 +153,7 @@ class TilePlotter:
             for grid in grids
         ]
         moving_locations = {a.grid.dst_loc for a in animations if a.grid.dst_loc != a.grid.src_loc}
-        self.tile.animation_grids = defaultdict(list)
+        self.tile.reset_animation_grids()
 
         src_rects = [
             pygame.Rect(*self.grid_tlwh(*animation.grid.src_loc))
