@@ -25,10 +25,10 @@ def main():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
-            
+
             if event.type == pygame.KEYUP and event.key == pygame.K_r:
                 game_engine.reset()
-            
+
         key = choice(keys)
         if not game_engine.game_is_over:
             if key == pygame.K_UP:
@@ -65,7 +65,6 @@ def main():
                 print(f"Move failures: {move_failures}")
                 print(f"Scores: {scores}")
                 game_engine.reset()
-
 
 
 if __name__ == "__main__":
