@@ -30,3 +30,15 @@ In order to do that, we need to refactor how the rectangles are pre-generated. F
 
 ## Implement RL algorithms
 
+* State: grid values, i.e. for a 4x4 game board, we can get a vector of their values by `g[0][0], g[0][1], g[0][2], g[0][3], g[1][0], ..., g[3][3]`.
+* Actions: `[MOVE_UP, MOVE_DOWN, MOVE_LEFT, MOVE_RIGHT]`
+
+### Deep Q-Learning
+
+Suppose there are 16 grids, each grid has values limited to [0, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048], so there are in total `16^16 = 18446744073709551616` possible states. That's impossible to use Q-Learning, as it would require to build a `(16^16) x 4` Q-table, which definitely doesn't fit in the memory.
+
+On the other hand, **Deep Q-Learning** is a good alternative. It utilizes a (deep) neural network, which takes the current state as the input and predicts Q-values for each action. Specifically in our case, it takes 16 values as input and predicts 4 values as output. We can then use few fully connected (FC) layers in hidden layers and apply `ReLU` or other activation layer after each FC layer.
+
+Note that at least the input values should be normalized, so training is easier. Supposing the max reachable value is 2^15 = 32768, we can normalize the values by `(g-16384) / 16384`, so the input values are between -1 and 1.
+
+Regarding the reward, of course the scores we obtained in each step are the most intuitive solution. However, considering some actions are not allowed in some case, we should also give this information to the reward function.

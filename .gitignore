@@ -3,3 +3,5 @@ README.html
 README_files/
 
 __pycache__
+
+.DS_Store
