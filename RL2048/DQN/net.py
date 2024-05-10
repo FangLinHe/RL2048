@@ -22,6 +22,7 @@ class Net(nn.Module):
             layers.append(nn.Linear(in_features, out_features, bias=bias))
             if activation_layer is not None:
                 layers.append(activation_layer())
+            layers.append(nn.Dropout())
             in_features = out_features
         layers.append(nn.Linear(in_features, output_feature_size, bias))
 

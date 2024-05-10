@@ -4,13 +4,16 @@ import argparse
 import json
 import pygame
 import time
+import math
 
 from datetime import datetime
 from random import choice
-from RL2048.game_engine import GameEngine
+from RL2048.game_engine import GameEngine, MoveResult
 from RL2048.tile import Tile
 from RL2048.tile_plotter import TilePlotter, PlotProperties
-from RL2048.DQN.dqn import Action, TrainingParameters, DQN, Net
+from RL2048.DQN.dqn import TrainingParameters, DQN
+from RL2048.DQN.net import Net
+from RL2048.DQN.replay_memory import Action, Transition
 from typing import List, Sequence, Optional
 
 from RL2048.DQN.dqn import DQN
@@ -30,12 +33,12 @@ def parse_args():
     )
     parser.add_argument(
         "--output_prefix",
-        default="Experiments/random",
+        default="Experiments/DQN",
         help="Prefix of output json file",
     )
     parser.add_argument(
         "--max_iters",
-        default=100,
+        default=1000,
         type=int,
         help="Max iterations of experiments; set it to negative value to run infinitely",
     )
@@ -44,9 +47,17 @@ def parse_args():
     return args
 
 
-def make_state(tile: Tile) -> Sequence[int]:
-    return [value for row in tile.grids for value in row]
+def make_state(tile: Tile) -> Sequence[float]:
+    def one_hot(v: int, size: int = 16) -> Sequence[int]:
+        loc = int(math.log2(float(v))) if v > 0 else 0
+        return [1 if i == loc else 0 for i in range(size)]
 
+    one_hot_grid = [one_hot(value) for row in tile.grids for value in row]
+    return [float(one_hot_value) for row in one_hot_grid for one_hot_value in row]
+
+
+INVALID_MOVEMENT_REWARD: float = -16
+GAME_OVER_REWARD: float = -128
 
 def main(show_board: bool, print_results: bool, output_prefix: str, max_iters: int):
     tile: Tile = Tile(width=4, height=4)
@@ -54,18 +65,17 @@ def main(show_board: bool, print_results: bool, output_prefix: str, max_iters: i
     plotter: TilePlotter = TilePlotter(tile, plot_properties)
     game_engine: GameEngine = GameEngine(tile)
 
-    keys = [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]
     move_failures: List[int] = []
     total_scores: List[int] = []
     max_grids: List[int] = []
 
     # DQN part
-    in_features: int = tile.width * tile.height
+    in_features: int = tile.width * tile.height * 16
     out_features: int = len(Action)
-    hidden_layers: List[int] = [64, 48, 32]
+    hidden_layers: List[int] = [256, 128, 64]
     policy_net = Net(in_features, out_features, hidden_layers)
     training_params = TrainingParameters(
-        memory_capacity=1024, gamma=0.99, batch_size=64, lr=0.001
+        memory_capacity=20000, gamma=0.99, batch_size=64, lr=0.000001,
     )
     dqn = DQN(policy_net, training_params)
 
@@ -75,7 +85,10 @@ def main(show_board: bool, print_results: bool, output_prefix: str, max_iters: i
 
     iter = 0
     start_time = time.time()
-    cur_state: Optional[Sequence[int]] = None
+    cur_state: Sequence[int] = make_state(tile)
+    next_state: Sequence[int] = []
+    total_rewards: List[float] = []
+    total_reward: float = 0.0
     while iter < max_iters:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -86,32 +99,43 @@ def main(show_board: bool, print_results: bool, output_prefix: str, max_iters: i
                 game_engine.reset()
 
         if not game_engine.game_is_over:
-            cur_state = make_state(tile)
-            next_action: Action = dqn.next_action_epsilon_greedy(cur_state)
-            if next_action == Action.UP:
+            action: Action = dqn.get_action_epsilon_greedy(cur_state)
+            reward: float = 0.0
+            if action == Action.UP:
                 move_result = game_engine.move_up()
-                if move_result.suc:
-                    game_engine.generate_new()
-                else:
-                    move_failure += 1
-            elif next_action == Action.DOWN:
+            elif action == Action.DOWN:
                 move_result = game_engine.move_down()
-                if move_result.suc:
-                    game_engine.generate_new()
-                else:
-                    move_failure += 1
-            elif next_action == Action.LEFT:
+            elif action == Action.LEFT:
                 move_result = game_engine.move_left()
-                if move_result.suc:
-                    game_engine.generate_new()
-                else:
-                    move_failure += 1
-            elif next_action == Action.RIGHT:
+            else:  # action == Action.RIGHT
                 move_result = game_engine.move_right()
-                if move_result.suc:
-                    game_engine.generate_new()
-                else:
-                    move_failure += 1
+
+            if move_result.suc:
+                game_engine.generate_new()
+                reward += move_result.score
+            else:
+                move_failure += 1
+                reward += INVALID_MOVEMENT_REWARD
+
+            if game_engine.game_is_over:
+                reward += GAME_OVER_REWARD  # + tile.max_grid())
+
+            next_state = make_state(tile)
+            total_reward += reward
+
+            transition = Transition(
+                state=cur_state,
+                action=action,
+                next_state=next_state,
+                reward=reward,
+                game_over=game_engine.game_is_over
+            )
+
+            if game_engine.game_is_over:
+                total_rewards.append(total_reward)
+                total_reward = 0.0
+            
+            dqn.push_transition_and_optimize_automatically(transition)
 
             if show_board:
                 plotter.plot(game_engine.score)
@@ -129,6 +153,7 @@ def main(show_board: bool, print_results: bool, output_prefix: str, max_iters: i
                     print(f"Move failures: {move_failures}")
                     print(f"Total scores: {total_scores}")
                     print(f"Max grids: {max_grids}")
+                    print(f"total_rewards: {total_rewards}")
 
                 output_json = {
                     "move_failures": move_failures,
