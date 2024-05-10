@@ -60,7 +60,7 @@ def make_state_one_hot(tile: Tile) -> Sequence[float]:
 
 
 INVALID_MOVEMENT_REWARD: float = -(2 ** 3)
-GAME_OVER_REWARD: float = 0.0 # -(2 ** 5)
+GAME_OVER_REWARD: float = -(2 ** 6)
 
 def main(show_board: bool, print_results: bool, output_prefix: str, max_iters: int):
     tile: Tile = Tile(width=4, height=4)
@@ -75,7 +75,7 @@ def main(show_board: bool, print_results: bool, output_prefix: str, max_iters: i
     # DQN part
     in_features: int = tile.width * tile.height * 16
     out_features: int = len(Action)
-    hidden_layers: List[int] = [512, 512, 512]
+    hidden_layers: List[int] = [128, 128, 64, 64]
     policy_net = Net(in_features, out_features, hidden_layers)
     training_params = TrainingParameters(
         memory_capacity=20000, gamma=0.99, batch_size=64, lr=1e-7,
