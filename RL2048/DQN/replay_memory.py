@@ -1,7 +1,7 @@
 import random
 
 from enum import Enum
-from typing import List, NamedTuple, Optional, Sequence
+from typing import List, NamedTuple, Sequence
 import torch
 
 

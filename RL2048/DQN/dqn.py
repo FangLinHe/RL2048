@@ -4,8 +4,8 @@ import torch
 
 from datetime import datetime
 from typing import NamedTuple, Sequence
-from net import Net
-from replay_memory import Action, Batch, ReplayMemory, Transition
+from .net import Net
+from .replay_memory import Action, Batch, ReplayMemory, Transition
 from torch import Tensor, nn, optim
 
 class TrainingParameters(NamedTuple):
