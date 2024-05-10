@@ -47,7 +47,10 @@ def parse_args():
     return args
 
 
-def make_state(tile: Tile) -> Sequence[float]:
+def make_state_from_grids(tile: Tile) -> Sequence[float]:
+    return [float(value) for row in tile.grids for value in row]
+
+def make_state_one_hot(tile: Tile) -> Sequence[float]:
     def one_hot(v: int, size: int = 16) -> Sequence[int]:
         loc = int(math.log2(float(v))) if v > 0 else 0
         return [1 if i == loc else 0 for i in range(size)]
@@ -56,8 +59,8 @@ def make_state(tile: Tile) -> Sequence[float]:
     return [float(one_hot_value) for row in one_hot_grid for one_hot_value in row]
 
 
-INVALID_MOVEMENT_REWARD: float = -16
-GAME_OVER_REWARD: float = -128
+INVALID_MOVEMENT_REWARD: float = -(2 ** 3)
+GAME_OVER_REWARD: float = 0.0 # -(2 ** 5)
 
 def main(show_board: bool, print_results: bool, output_prefix: str, max_iters: int):
     tile: Tile = Tile(width=4, height=4)
@@ -72,10 +75,10 @@ def main(show_board: bool, print_results: bool, output_prefix: str, max_iters: i
     # DQN part
     in_features: int = tile.width * tile.height * 16
     out_features: int = len(Action)
-    hidden_layers: List[int] = [256, 128, 64]
+    hidden_layers: List[int] = [64, 64]
     policy_net = Net(in_features, out_features, hidden_layers)
     training_params = TrainingParameters(
-        memory_capacity=20000, gamma=0.99, batch_size=64, lr=0.000001,
+        memory_capacity=20000, gamma=0.99, batch_size=64, lr=1e-7,
     )
     dqn = DQN(policy_net, training_params)
 
@@ -85,7 +88,7 @@ def main(show_board: bool, print_results: bool, output_prefix: str, max_iters: i
 
     iter = 0
     start_time = time.time()
-    cur_state: Sequence[int] = make_state(tile)
+    cur_state: Sequence[int] = make_state_one_hot(tile)
     next_state: Sequence[int] = []
     total_rewards: List[float] = []
     total_reward: float = 0.0
@@ -120,14 +123,14 @@ def main(show_board: bool, print_results: bool, output_prefix: str, max_iters: i
             if game_engine.game_is_over:
                 reward += GAME_OVER_REWARD  # + tile.max_grid())
 
-            next_state = make_state(tile)
+            next_state = make_state_one_hot(tile)
             total_reward += reward
 
             transition = Transition(
                 state=cur_state,
                 action=action,
                 next_state=next_state,
-                reward=reward,
+                reward=reward / 1024,
                 game_over=game_engine.game_is_over
             )
 
