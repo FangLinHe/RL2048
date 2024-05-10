@@ -75,7 +75,7 @@ def main(show_board: bool, print_results: bool, output_prefix: str, max_iters: i
     # DQN part
     in_features: int = tile.width * tile.height * 16
     out_features: int = len(Action)
-    hidden_layers: List[int] = [64, 64]
+    hidden_layers: List[int] = [512, 512, 512]
     policy_net = Net(in_features, out_features, hidden_layers)
     training_params = TrainingParameters(
         memory_capacity=20000, gamma=0.99, batch_size=64, lr=1e-7,
