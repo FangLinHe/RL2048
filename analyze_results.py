@@ -30,10 +30,10 @@ def main(in_file_json: str, window_size: int):
     
     for k, v in data.items():
         print(f"Key: {k}, data size: {len(v)}")
-        plt.scatter(list(range(len(v))), v, marker=".", alpha=0.2)
+        plt.scatter(list(range(len(v))), v, marker=".", alpha=0.2, s=5.0)
         avgs_y = moving_avg(v, window_size)
         avgs_x = [i * window_size for i in range(1, len(avgs_y) + 1)]
-        plt.plot(avgs_x, avgs_y)
+        plt.plot(avgs_x, avgs_y, color="red")
         plt.title(k)
         plt.show()
     
