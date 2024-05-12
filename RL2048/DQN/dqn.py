@@ -45,8 +45,8 @@ class DQN:
 
         self.training_params = training_params
         self.loss_fn: nn.Module = nn.SmoothL1Loss()
-        self.optimizer: optim.Optimizer = optim.Adam(
-            self.policy_net.parameters(), training_params.lr
+        self.optimizer: optim.Optimizer = optim.AdamW(
+            self.policy_net.parameters(), training_params.lr, amsgrad=True
         )
         self.scheduler = optim.lr_scheduler.MultiStepLR(
             self.optimizer,
@@ -62,9 +62,9 @@ class DQN:
 
     def get_action_epsilon_greedy(self, state: Sequence[float]) -> Action:
         state_tensor: Tensor = torch.tensor(state).view((1, -1))
-        eps_threshold = self.training_params.eps_end + math.exp(
-            -1.0 * self.optimize_steps / self.training_params.eps_decay
-        )
+        eps_threshold = self.training_params.eps_end + (
+            self.training_params.eps_start - self.training_params.eps_end
+        ) * math.exp(-1.0 * self.optimize_steps / self.training_params.eps_decay)
 
         if random.random() > eps_threshold:
             with torch.no_grad():
@@ -110,7 +110,9 @@ class DQN:
 
         state_action_values = self.policy_net(batch.states).gather(1, batch.actions)
         with torch.no_grad():
-            next_state_values = self.target_net(batch.next_states).max(1).values.view((-1, 1))
+            next_state_values = (
+                self.target_net(batch.next_states).max(1).values.view((-1, 1))
+            )
 
         expected_state_action_values = batch.rewards + (
             self.training_params.gamma * next_state_values
@@ -145,7 +147,12 @@ if __name__ == "__main__":
     policy_net = Net(2, 4, [16])
     target_net = Net(2, 4, [16])
     training_params = TrainingParameters(
-        memory_capacity=1024, gamma=0.99, batch_size=64, lr=0.001
+        memory_capacity=1024,
+        gamma=0.99,
+        batch_size=64,
+        lr=0.001,
+        eps_start=0.0,
+        eps_end=0.0,
     )
     t1 = Transition(
         state=[1.0, 0.5],
