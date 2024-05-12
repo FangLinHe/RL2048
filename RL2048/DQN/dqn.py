@@ -74,7 +74,7 @@ class DQN:
         return self.memory.push(transition)
 
     def push_transition_and_optimize_automatically(
-        self, transition: Transition
+        self, transition: Transition, output_net_dir: str
     ) -> bool:
         self.push_transition(transition)
         if self.memory.is_full():
@@ -86,6 +86,7 @@ class DQN:
                 loss = self.optimize_model(reset_memory=is_last_round)
                 losses.append(loss)
             print(f"Done. Average loss: {torch.mean(torch.tensor(losses))}")
+            self.save_model(f"{output_net_dir}/{self.optimize_count:04d}.pth")
 
     def optimize_model(self, reset_memory: bool = True) -> float:
         batch: Batch = self.memory.sample(

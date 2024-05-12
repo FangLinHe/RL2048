@@ -7,6 +7,7 @@ import shutil
 import tempfile
 import time
 import math
+import os
 
 from datetime import datetime
 from RL2048.game_engine import GameEngine
@@ -33,8 +34,13 @@ def parse_args():
         help="Print results, like scores, failure times, etc.",
     )
     parser.add_argument(
-        "--output_prefix",
+        "--output_json_prefix",
         default="Experiments/DQN",
+        help="Prefix of output json file",
+    )
+    parser.add_argument(
+        "--output_net_prefix",
+        default="TrainedNetworks/DQN",
         help="Prefix of output json file",
     )
     parser.add_argument(
@@ -80,7 +86,13 @@ def write_json(move_failures, total_scores, max_grids, total_rewards, filepath: 
             shutil.move(tmp_file, filepath)
 
 
-def main(show_board: bool, print_results: bool, output_prefix: str, max_iters: int):
+def main(
+    show_board: bool,
+    print_results: bool,
+    output_json_prefix: str,
+    output_net_prefix: str,
+    max_iters: int,
+):
     tile: Tile = Tile(width=4, height=4)
     plot_properties: PlotProperties = PlotProperties()
     plotter: TilePlotter = TilePlotter(tile, plot_properties)
@@ -105,7 +117,9 @@ def main(show_board: bool, print_results: bool, output_prefix: str, max_iters: i
 
     move_failure = 0
     date_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_json_fn = f"{output_prefix}_{date_time_str}.json"
+    output_json_fn = f"{output_json_prefix}_{date_time_str}.json"
+    output_net_dir = f"{output_net_prefix}/{date_time_str}"
+    os.makedirs(output_net_dir)
 
     iter = 0
     start_time = time.time()
@@ -159,7 +173,7 @@ def main(show_board: bool, print_results: bool, output_prefix: str, max_iters: i
                 total_rewards.append(total_reward)
                 total_reward = 0.0
 
-            dqn.push_transition_and_optimize_automatically(transition)
+            dqn.push_transition_and_optimize_automatically(transition, output_net_dir)
 
             if show_board:
                 plotter.plot(game_engine.score)
