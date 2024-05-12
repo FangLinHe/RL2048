@@ -19,9 +19,9 @@ class TrainingParameters(NamedTuple):
     lr_gamma: int = 0.1
 
     # for epsilon-greedy algorithm
-    eps_start: float = 0.9
+    eps_start: float = 0.5
     eps_end: float = 0.1
-    eps_decay: float = 0.997  # Decaying 731 steps
+    eps_decay: float = 0.998  # Decaying 803 steps
 
     optimize_times: int = 100
 
