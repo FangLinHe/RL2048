@@ -78,7 +78,7 @@ def main(show_board: bool, print_results: bool, output_prefix: str, max_iters: i
     hidden_layers: List[int] = [128, 128, 64, 64]
     policy_net = Net(in_features, out_features, hidden_layers)
     training_params = TrainingParameters(
-        memory_capacity=20000, gamma=0.99, batch_size=64, lr=1e-6,
+        memory_capacity=20000, gamma=0.99, batch_size=64, lr=1e-7,
     )
     dqn = DQN(policy_net, training_params)
 

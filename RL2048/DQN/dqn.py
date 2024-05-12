@@ -15,7 +15,7 @@ class TrainingParameters(NamedTuple):
     gamma: float = 0.99
     batch_size: int = 64
     lr: float = 0.001
-    lr_step_size: int = 100
+    lr_step_size: int = 250
     lr_gamma: int = 0.1
 
     # for epsilon-greedy algorithm
