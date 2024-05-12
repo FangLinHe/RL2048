@@ -112,13 +112,13 @@ def main(
         memory_capacity=20000,
         gamma=0.99,
         batch_size=128,
-        lr=5e-6,
-        lr_step_sizes=[5000, 10000, 30000, 50000, 70000],
+        lr=1e-5,
+        lr_step_sizes=[1500, 3000, 5000, 10000, 30000, 50000, 70000],
         lr_gamma=0.1,
         eps_start=0.9,
         eps_end=0.05,
-        eps_decay=40000,
-        TAU=0.005, # 0.005
+        eps_decay=10000,
+        TAU=0.01, # 0.005
         save_network_steps=100
     )
 
@@ -170,7 +170,7 @@ def main(
                 reward += GAME_OVER_REWARD  # + tile.max_grid())
 
             # Normalize reward by max grid
-            reward /= tile.max_grid()
+            # reward /= tile.max_grid()
 
             next_state = make_state_one_hot(tile)
             total_reward += reward
@@ -179,7 +179,7 @@ def main(
                 state=cur_state,
                 action=action,
                 next_state=next_state,
-                reward=reward,
+                reward=reward / 256,
                 game_over=game_engine.game_is_over,
             )
             cur_state = next_state
