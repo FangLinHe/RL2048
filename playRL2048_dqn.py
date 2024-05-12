@@ -107,13 +107,21 @@ def main(
     out_features: int = len(Action)
     hidden_layers: List[int] = [128, 128, 64, 64]
     policy_net = Net(in_features, out_features, hidden_layers)
+    target_net = Net(in_features, out_features, hidden_layers)
     training_params = TrainingParameters(
-        memory_capacity=20000,
+        memory_capacity=12800,
         gamma=0.99,
-        batch_size=64,
-        lr=1e-7,
+        batch_size=128,
+        lr=1e-3,
+        lr_step_sizes=[100, 80, 60],
+        lr_gamma=0.1,
+        eps_start=0.9,
+        eps_end=0.05,
+        eps_decay=400,
+        optimize_times=100,
+        TAU=0.005,
     )
-    dqn = DQN(policy_net, training_params)
+    dqn = DQN(policy_net, target_net, training_params)
 
     move_failure = 0
     date_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -165,7 +173,7 @@ def main(
                 state=cur_state,
                 action=action,
                 next_state=next_state,
-                reward=reward / 1024,
+                reward=reward,
                 game_over=game_engine.game_is_over,
             )
 

@@ -1,7 +1,7 @@
 import os
 import random
-from sympy import false
 import torch
+import math
 
 from datetime import datetime
 from typing import NamedTuple, List, Sequence
@@ -20,13 +20,14 @@ class TrainingParameters(NamedTuple):
 
     # for epsilon-greedy algorithm
     eps_start: float = 0.9
-    eps_end: float = 0.1
-    eps_decay: float = 0.997
+    eps_end: float = 0.05
+    eps_decay: float = 400
 
     optimize_times: int = 100
 
+    # update rate of the target network
+    TAU: float = 0.005
 
-training_params = TrainingParameters()
 
 script_file_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -35,11 +36,15 @@ class DQN:
     def __init__(
         self,
         policy_net: Net,
+        target_net: Net,
         training_params: TrainingParameters = TrainingParameters(),
     ):
         self.policy_net: Net = policy_net
+        self.target_net: Net = target_net
+        self.target_net.load_state_dict(self.policy_net.state_dict())
+
         self.training_params = training_params
-        self.loss_fn: nn.Module = nn.MSELoss()
+        self.loss_fn: nn.Module = nn.SmoothL1Loss()
         self.optimizer: optim.Optimizer = optim.Adam(
             self.policy_net.parameters(), training_params.lr
         )
@@ -57,10 +62,8 @@ class DQN:
 
     def get_action_epsilon_greedy(self, state: Sequence[float]) -> Action:
         state_tensor: Tensor = torch.tensor(state).view((1, -1))
-        eps_threshold = max(
-            self.training_params.eps_end,
-            self.training_params.eps_start
-            * (self.training_params.eps_decay**self.optimize_steps),
+        eps_threshold = self.training_params.eps_end + math.exp(
+            -1.0 * self.optimize_steps / self.training_params.eps_decay
         )
 
         if random.random() > eps_threshold:
@@ -85,8 +88,20 @@ class DQN:
                 is_last_round = i == self.training_params.optimize_times - 1
                 loss = self.optimize_model(reset_memory=is_last_round)
                 losses.append(loss)
-            print(f"Done. Average loss: {torch.mean(torch.tensor(losses))}")
+            print(f"Done. Average loss: {torch.tensor(losses).mean().item()}")
             self.save_model(f"{output_net_dir}/step_{self.optimize_count:04d}")
+
+            # Soft update of the target network's weights
+            # θ′ ← τ θ + (1 −τ )θ′
+            target_net_state_dict = self.target_net.state_dict()
+            policy_net_state_dict = self.policy_net.state_dict()
+            for key in policy_net_state_dict:
+                target_net_state_dict[key] = policy_net_state_dict[
+                    key
+                ] * self.training_params.TAU + target_net_state_dict[key] * (
+                    1 - self.training_params.TAU
+                )
+            self.target_net.load_state_dict(target_net_state_dict)
 
     def optimize_model(self, reset_memory: bool = True) -> float:
         batch: Batch = self.memory.sample(
@@ -94,20 +109,18 @@ class DQN:
         )
 
         state_action_values = self.policy_net(batch.states).gather(1, batch.actions)
-        all_next_state_action_values = self.policy_net(batch.next_states)
-        next_state_max_values = (
-            all_next_state_action_values.max(1)[0].detach().view((-1, 1))
-        )
+        with torch.no_grad():
+            next_state_values = self.target_net(batch.next_states).max(1).values.view((-1, 1))
 
-        expected_state_action_values = (
-            batch.rewards + (
-                self.training_params.gamma * next_state_max_values
-            ) * batch.games_over.logical_not().type_as(batch.rewards)
-        )
+        expected_state_action_values = batch.rewards + (
+            self.training_params.gamma * next_state_values
+        ) * batch.games_over.logical_not().type_as(batch.rewards)
         loss = self.loss_fn(state_action_values, expected_state_action_values)
 
         self.optimizer.zero_grad()
         loss.backward()
+        # In-place gradient clipping
+        torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
         self.optimizer.step()
 
         if reset_memory:
@@ -118,9 +131,7 @@ class DQN:
         return loss.item()
 
     def save_model(self, filename_prefix: str = "policy_net") -> str:
-        save_path: str = (
-            f"{filename_prefix}.pth"
-        )
+        save_path: str = f"{filename_prefix}.pth"
         torch.save(self.policy_net.state_dict(), save_path)
         print(f"Model saved to path: {save_path}")
 
@@ -132,6 +143,7 @@ class DQN:
 
 if __name__ == "__main__":
     policy_net = Net(2, 4, [16])
+    target_net = Net(2, 4, [16])
     training_params = TrainingParameters(
         memory_capacity=1024, gamma=0.99, batch_size=64, lr=0.001
     )
@@ -150,7 +162,7 @@ if __name__ == "__main__":
         game_over=False,
     )
 
-    dqn = DQN(policy_net, training_params)
+    dqn = DQN(policy_net, target_net, training_params)
 
     dqn.push_transition(t1)
     dqn.push_transition(t2)
