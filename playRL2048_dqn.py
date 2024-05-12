@@ -166,6 +166,9 @@ def main(
             if game_engine.game_is_over:
                 reward += GAME_OVER_REWARD  # + tile.max_grid())
 
+            # Normalize reward by max grid
+            reward /= tile.max_grid()
+
             next_state = make_state_one_hot(tile)
             total_reward += reward
 
