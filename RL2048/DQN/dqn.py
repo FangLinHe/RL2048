@@ -21,7 +21,7 @@ class TrainingParameters(NamedTuple):
     # for epsilon-greedy algorithm
     eps_start: float = 0.9
     eps_end: float = 0.1
-    eps_decay: float = 0.99
+    eps_decay: float = 0.997  # Decaying 731 steps
 
     optimize_times: int = 100
 
