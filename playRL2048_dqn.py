@@ -213,4 +213,10 @@ def main(
 
 if __name__ == "__main__":
     args = parse_args()
-    main(args.show_board, args.print_results, args.output_prefix, args.max_iters)
+    main(
+        args.show_board,
+        args.print_results,
+        args.output_json_prefix,
+        args.output_net_prefix,
+        args.max_iters,
+    )

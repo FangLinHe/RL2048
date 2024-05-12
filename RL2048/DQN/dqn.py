@@ -15,7 +15,7 @@ class TrainingParameters(NamedTuple):
     gamma: float = 0.99
     batch_size: int = 64
     lr: float = 0.001
-    lr_step_size: int = 250
+    lr_step_sizes: List[int] = [100, 80, 60]
     lr_gamma: int = 0.1
 
     # for epsilon-greedy algorithm
@@ -43,9 +43,9 @@ class DQN:
         self.optimizer: optim.Optimizer = optim.Adam(
             self.policy_net.parameters(), training_params.lr
         )
-        self.scheduler = optim.lr_scheduler.StepLR(
+        self.scheduler = optim.lr_scheduler.MultiStepLR(
             self.optimizer,
-            self.training_params.lr_step_size,
+            self.training_params.lr_step_sizes,
             self.training_params.gamma,
         )
         self.memory = ReplayMemory(self.training_params.memory_capacity)
@@ -86,7 +86,7 @@ class DQN:
                 loss = self.optimize_model(reset_memory=is_last_round)
                 losses.append(loss)
             print(f"Done. Average loss: {torch.mean(torch.tensor(losses))}")
-            self.save_model(f"{output_net_dir}/{self.optimize_count:04d}.pth")
+            self.save_model(f"{output_net_dir}/step_{self.optimize_count:04d}")
 
     def optimize_model(self, reset_memory: bool = True) -> float:
         batch: Batch = self.memory.sample(
@@ -118,9 +118,8 @@ class DQN:
         return loss.item()
 
     def save_model(self, filename_prefix: str = "policy_net") -> str:
-        date_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
         save_path: str = (
-            f"{script_file_path}/../../TrainedNetworks/{filename_prefix}_{date_time_str}.pth"
+            f"{filename_prefix}.pth"
         )
         torch.save(self.policy_net.state_dict(), save_path)
         print(f"Model saved to path: {save_path}")
