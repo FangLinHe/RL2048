@@ -109,19 +109,18 @@ def main(
     policy_net = Net(in_features, out_features, hidden_layers)
     target_net = Net(in_features, out_features, hidden_layers)
     training_params = TrainingParameters(
-        memory_capacity=12800,
+        memory_capacity=20000,
         gamma=0.99,
         batch_size=128,
-        lr=1e-5,
-        lr_step_sizes=[20, 60, 120, 200],
+        lr=5e-6,
+        lr_step_sizes=[5000, 10000, 30000, 50000, 70000],
         lr_gamma=0.1,
         eps_start=0.9,
         eps_end=0.05,
-        eps_decay=400,
-        optimize_times=100,
-        TAU=0.005,
+        eps_decay=40000,
+        TAU=0.005, # 0.005
+        save_network_steps=100
     )
-    dqn = DQN(policy_net, target_net, training_params)
 
     move_failure = 0
     date_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -129,12 +128,16 @@ def main(
     output_net_dir = f"{output_net_prefix}/{date_time_str}"
     os.makedirs(output_net_dir)
 
+    dqn = DQN(policy_net, target_net, output_net_dir, training_params)
+
     iter = 0
     start_time = time.time()
     cur_state: Sequence[int] = make_state_one_hot(tile)
     next_state: Sequence[int] = []
     total_rewards: List[float] = []
     total_reward: float = 0.0
+
+    new_collect_count: int = 0
     while iter < max_iters:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -179,12 +182,18 @@ def main(
                 reward=reward,
                 game_over=game_engine.game_is_over,
             )
+            cur_state = next_state
 
             if game_engine.game_is_over:
                 total_rewards.append(total_reward)
                 total_reward = 0.0
 
-            dqn.push_transition_and_optimize_automatically(transition, output_net_dir)
+            # dqn.push_transition_and_optimize_automatically(transition, output_net_dir)
+            dqn.push_transition(transition)
+            new_collect_count += 1
+            if new_collect_count >= training_params.batch_size:
+                dqn.optimize_model()
+                new_collect_count = 0
 
             if show_board:
                 plotter.plot(game_engine.score)

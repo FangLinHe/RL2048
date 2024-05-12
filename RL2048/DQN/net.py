@@ -20,10 +20,9 @@ class Net(nn.Module):
         layers = []
         for i, out_features in enumerate(hidden_layer_sizes):
             layers.append(nn.Linear(in_features, out_features, bias=bias))
+            layers.append(nn.BatchNorm1d(num_features=out_features))
             if activation_layer is not None:
                 layers.append(activation_layer())
-            if i > 0:
-                layers.append(nn.Dropout())
             in_features = out_features
         layers.append(nn.Linear(in_features, output_feature_size, bias))
 
