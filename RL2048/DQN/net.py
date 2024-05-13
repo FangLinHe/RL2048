@@ -12,21 +12,44 @@ class Residual(nn.Module):
         in_feature_size: int,
         mid_feature_size: int,
         activation_layer: Optional[nn.Module] = nn.ReLU,
+        activation_after_bn: bool = True,
     ):
         super(Residual, self).__init__()
-        self.linear1 = nn.Linear(in_feature_size, mid_feature_size)
-        self.bn1 = nn.BatchNorm1d(num_features=mid_feature_size)
-        self.linear2 = nn.Linear(mid_feature_size, mid_feature_size)
-        self.bn2 = nn.BatchNorm1d(num_features=mid_feature_size)
-        self.linear3 = nn.Linear(mid_feature_size, in_feature_size)
-        self.bn3 = nn.BatchNorm1d(num_features=in_feature_size)
+        if activation_after_bn:
+            self.block1 = nn.Sequential(
+                nn.Linear(in_feature_size, mid_feature_size),
+                nn.BatchNorm1d(num_features=mid_feature_size),
+                activation_layer(),
+            )
+            self.block2 = nn.Sequential(
+                nn.Linear(mid_feature_size, mid_feature_size),
+                nn.BatchNorm1d(num_features=mid_feature_size),
+                activation_layer(),
+            )
+            self.block3 = nn.Sequential(
+                nn.Linear(mid_feature_size, in_feature_size),
+                nn.BatchNorm1d(num_features=in_feature_size),
+            )
+        else:  # activation before bn
+            self.block1 = nn.Sequential(
+                nn.Linear(in_feature_size, mid_feature_size),
+                activation_layer(),
+                nn.BatchNorm1d(num_features=mid_feature_size),
+            )
+            self.block2 = nn.Sequential(
+                nn.Linear(mid_feature_size, mid_feature_size),
+                activation_layer(),
+                nn.BatchNorm1d(num_features=mid_feature_size),
+            )
+            self.blocks3 = nn.Sequential(
+                nn.Linear(mid_feature_size, in_feature_size),
+                nn.BatchNorm1d(num_features=in_feature_size),
+            )
         self.activation = activation_layer()
 
     def forward(self, x):
-        y1 = self.bn1(self.activation(self.linear1(x)))
-        y2 = self.bn2(self.activation(self.linear2(y1)))
-        y3 = self.bn3(self.linear3(y2))
-        return x + y3
+        y = self.block3(self.block2(self.block1(x)))
+        return x + y
 
 
 class Net(nn.Module):
