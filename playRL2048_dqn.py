@@ -61,6 +61,7 @@ def parse_args():
     parser.add_argument(
         "--trained_net_path",
         type=str,
+        default="",
         help="Path to trained network to play DQN automatically",
     )
     parser.add_argument(
@@ -407,7 +408,7 @@ def eval(
 
 if __name__ == "__main__":
     args = parse_args()
-    if args.trained_net_path == "":
+    if args.trained_net_path is None or args.trained_net_path == "":
         train(
             args.show_board,
             args.print_results,
