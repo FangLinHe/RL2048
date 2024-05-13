@@ -28,6 +28,7 @@ class TrainingParameters(NamedTuple):
     TAU: float = 0.005
 
     save_network_steps: int = 1000
+    print_loss_steps: int = 100
 
 
 script_file_path = os.path.dirname(os.path.abspath(__file__))
@@ -140,12 +141,13 @@ class DQN:
             )
         self.target_net.load_state_dict(target_net_state_dict)
 
-        if self.optimize_steps % self.training_params.save_network_steps == 0:
+        if self.optimize_steps % self.training_params.print_loss_steps == 0:
             print(
                 f"Done optimizing {self.optimize_steps} steps. "
                 f"Average loss: {torch.tensor(self.losses).mean().item()}"
             )
             self.losses = []
+        if self.optimize_steps % self.training_params.save_network_steps == 0:
             self.save_model(f"{self.output_net_dir}/step_{self.optimize_steps:04d}")
 
         return loss.item()

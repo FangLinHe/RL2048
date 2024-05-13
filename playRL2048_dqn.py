@@ -161,7 +161,8 @@ def train(
         eps_end=0.05,
         eps_decay=10000,
         TAU=0.005,
-        save_network_steps=100,
+        save_network_steps=2000,
+        print_loss_steps=100,
     )
 
     move_failure = 0
