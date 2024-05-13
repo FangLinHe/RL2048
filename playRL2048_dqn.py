@@ -117,7 +117,7 @@ def main(
         lr_gamma=0.1,
         eps_start=0.9,
         eps_end=0.05,
-        eps_decay=10000,
+        eps_decay=30000,
         TAU=0.005,
         save_network_steps=100,
     )
