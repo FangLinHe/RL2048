@@ -5,7 +5,6 @@ import torch.nn as nn
 import torch.optim as optim
 
 
-
 class Net(nn.Module):
     def __init__(
             self,
@@ -20,18 +19,20 @@ class Net(nn.Module):
         layers = []
         for i, out_features in enumerate(hidden_layer_sizes):
             layers.append(nn.Linear(in_features, out_features, bias=bias))
-            # if i < len(hidden_layer_sizes) - 1:
             layers.append(nn.BatchNorm1d(num_features=out_features))
             if activation_layer is not None:
                 layers.append(activation_layer())
+            if i < len(hidden_layer_sizes) - 1:
+                layers.append(nn.Dropout())
+
             in_features = out_features
         layers.append(nn.Linear(in_features, output_feature_size, bias))
 
         self.net = nn.Sequential(*layers)
-    
+
     def forward(self, x):
         return self.net(x)
-    
+
 if __name__ == "__main__":
     net = Net(16, 4, [64, 16])
     input_tensor = torch.rand([1, 16])
