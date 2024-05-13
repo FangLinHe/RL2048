@@ -113,11 +113,11 @@ def main(
         gamma=0.99,  # 0.99,
         batch_size=128,
         lr=1e-4,
-        lr_decay_milestones=[1500000, 3000000, 5000000, 7000000],
+        lr_decay_milestones=[10000, 25000, 40000, 60000, 80000, 105000],
         lr_gamma=0.1,
         eps_start=0.9,
         eps_end=0.05,
-        eps_decay=30000,
+        eps_decay=10000,
         TAU=0.005,
         save_network_steps=100,
     )
