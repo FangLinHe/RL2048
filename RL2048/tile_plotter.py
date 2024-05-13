@@ -223,7 +223,6 @@ class TilePlotter:
         self.win.blit(self.game_surface, (0, self.plot_properties.info_board_height))
         self.plot_score(score)
         pygame.display.update()
-        pygame.time.delay(200)
         # self.clock.tick(self.plot_properties.fps)
 
     def plot_game_over(self):
@@ -240,4 +239,3 @@ class TilePlotter:
         self.game_surface.blit(text_surface, text_rect)
         self.win.blit(self.game_surface, (0, self.plot_properties.info_board_height))
         pygame.display.update()
-        pygame.time.delay(2000)

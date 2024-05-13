@@ -336,6 +336,7 @@ def eval(
     cur_state: Sequence[int] = make_state_one_hot(tile)
 
     action_candidates: List[Action] = []
+    inf_times = []
     while iter < max_iters:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -346,7 +347,9 @@ def eval(
                 game_engine.reset()
 
         if not game_engine.game_is_over:
+            start_inf_time = time.time()
             policy_net_output = DQN.get_action(policy_net, cur_state)
+            inf_times.append(time.time() - start_inf_time)
             expected_value: float = policy_net_output.expected_value
             action: Action = policy_net_output.action
 
@@ -404,6 +407,7 @@ def eval(
     print(
         f"Done running {max_iters} times of experiments in {round(elapsed_sec * 1000.0)} millisecond(s)."
     )
+    print(f"Average inference time: {sum(inf_times) / len(inf_times)}")
     print(f"See results in {output_json_fn}.")
 
 
