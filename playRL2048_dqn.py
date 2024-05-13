@@ -118,8 +118,8 @@ def main(
         eps_start=0.9,
         eps_end=0.05,
         eps_decay=10000,
-        TAU=0.01, # 0.005
-        save_network_steps=100
+        TAU=0.01,  # 0.005
+        save_network_steps=100,
     )
 
     move_failure = 0
@@ -179,7 +179,7 @@ def main(
                 state=cur_state,
                 action=action,
                 next_state=next_state,
-                reward=reward / (2 ** 16),
+                reward=reward / (2**16),
                 game_over=game_engine.game_is_over,
             )
             cur_state = next_state

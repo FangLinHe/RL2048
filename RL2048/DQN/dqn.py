@@ -48,7 +48,7 @@ class DQN:
         self.training_params = training_params
         self.loss_fn: nn.Module = nn.SmoothL1Loss()
         self.optimizer: optim.Optimizer = optim.AdamW(
-            self.policy_net.parameters(), training_params.lr,amsgrad=True
+            self.policy_net.parameters(), training_params.lr, amsgrad=True
         )
         self.scheduler = optim.lr_scheduler.MultiStepLR(
             self.optimizer,
@@ -80,22 +80,6 @@ class DQN:
 
     def push_transition(self, transition: Transition):
         self.memory.push(transition)
-
-    # def push_transition_and_optimize_automatically(
-    #     self, transition: Transition, output_net_dir: str
-    # ) -> bool:
-    #     self.push_transition(transition)
-    #     if self.memory.is_full():
-    #         losses: List[float] = []
-    #         self.optimize_count += 1
-    #         print(f"Optimizing - {self.optimize_count}...")
-    #         for i in range(self.training_params.optimize_times):
-    #             is_last_round = i == self.training_params.optimize_times - 1
-    #             loss = self.optimize_model(reset_memory=is_last_round)
-    #             losses.append(loss)
-    #         print(f"Done. Average loss: {torch.tensor(losses).mean().item()}")
-    #         self.save_model(f"{output_net_dir}/step_{self.optimize_count:04d}")
-
 
     def optimize_model(self) -> float:
         if len(self.memory) < self.training_params.batch_size:
@@ -147,8 +131,10 @@ class DQN:
         self.target_net.load_state_dict(target_net_state_dict)
 
         if self.optimize_steps % self.training_params.save_network_steps == 0:
-            print(f"Done optimizing {self.optimize_steps} steps. "\
-                  f"Average loss: {torch.tensor(self.losses).mean().item()}")
+            print(
+                f"Done optimizing {self.optimize_steps} steps. "
+                f"Average loss: {torch.tensor(self.losses).mean().item()}"
+            )
             self.losses = []
             self.save_model(f"{self.output_net_dir}/step_{self.optimize_steps:04d}")
 
