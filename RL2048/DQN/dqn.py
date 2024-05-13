@@ -47,8 +47,8 @@ class DQN:
 
         self.training_params = training_params
         self.loss_fn: nn.Module = nn.SmoothL1Loss()
-        self.optimizer: optim.Optimizer = optim.Adam(
-            self.policy_net.parameters(), training_params.lr
+        self.optimizer: optim.Optimizer = optim.AdamW(
+            self.policy_net.parameters(), training_params.lr,amsgrad=True
         )
         self.scheduler = optim.lr_scheduler.MultiStepLR(
             self.optimizer,

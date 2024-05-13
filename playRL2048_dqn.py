@@ -112,8 +112,8 @@ def main(
         memory_capacity=20000,
         gamma=0.99,
         batch_size=128,
-        lr=1e-5,
-        lr_step_sizes=[1500, 3000, 5000, 10000, 30000, 50000, 70000],
+        lr=1e-4,
+        lr_step_sizes=[10000, 30000, 50000, 70000],
         lr_gamma=0.1,
         eps_start=0.9,
         eps_end=0.05,
@@ -179,7 +179,7 @@ def main(
                 state=cur_state,
                 action=action,
                 next_state=next_state,
-                reward=reward / 256,
+                reward=reward / (2 ** 16),
                 game_over=game_engine.game_is_over,
             )
             cur_state = next_state
