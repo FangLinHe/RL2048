@@ -151,11 +151,11 @@ def train(
         residual_mid_feature_sizes=residual_mid_feature_sizes,
     )
     training_params = TrainingParameters(
-        memory_capacity=50000,
+        memory_capacity=20000,
         gamma=0.99,
-        batch_size=128,
+        batch_size=256,
         lr=1e-3,
-        lr_decay_milestones=[5000, 20000, 50000, 80000, 110000],
+        lr_decay_milestones=[15000, 30000, 50000, 70000],
         lr_gamma=0.1,
         eps_start=0.9,
         eps_end=0.05,
