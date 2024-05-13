@@ -15,7 +15,7 @@ class TrainingParameters(NamedTuple):
     gamma: float = 0.99
     batch_size: int = 64
     lr: float = 0.001
-    lr_step_sizes: List[int] = [100, 80, 60]
+    lr_decay_milestones: List[int] = [100, 80, 60]
     lr_gamma: int = 0.1
 
     # for epsilon-greedy algorithm
@@ -52,7 +52,7 @@ class DQN:
         )
         self.scheduler = optim.lr_scheduler.MultiStepLR(
             self.optimizer,
-            self.training_params.lr_step_sizes,
+            self.training_params.lr_decay_milestones,
             self.training_params.gamma,
         )
         self.memory = ReplayMemory(self.training_params.memory_capacity)

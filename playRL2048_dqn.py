@@ -113,7 +113,7 @@ def main(
         gamma=0.99,  # 0.99,
         batch_size=128,
         lr=1e-4,
-        lr_step_sizes=[100000, 300000, 500000, 700000],
+        lr_decay_milestones=[1500000, 3000000, 5000000, 7000000],
         lr_gamma=0.1,
         eps_start=0.9,
         eps_end=0.05,
