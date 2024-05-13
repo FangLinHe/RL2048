@@ -23,8 +23,8 @@ class Residual(nn.Module):
         self.activation = activation_layer()
 
     def forward(self, x):
-        y1 = self.activation(self.bn1(self.linear1(x)))
-        y2 = self.activation(self.bn2(self.linear2(y1)))
+        y1 = self.bn1(self.activation(self.linear1(x)))
+        y2 = self.bn2(self.activation(self.linear2(y1)))
         y3 = self.bn3(self.linear3(y2))
         return x + y3
 
