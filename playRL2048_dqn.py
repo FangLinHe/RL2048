@@ -159,7 +159,7 @@ def train(
         lr_gamma=0.1,
         eps_start=0.9,
         eps_end=0.05,
-        eps_decay=10000,
+        eps_decay=25000,
         TAU=0.005,
         save_network_steps=2000,
         print_loss_steps=100,
