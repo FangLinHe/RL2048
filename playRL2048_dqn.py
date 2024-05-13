@@ -105,7 +105,7 @@ def main(
     # DQN part
     in_features: int = tile.width * tile.height * 16
     out_features: int = len(Action)
-    hidden_layers: List[int] = [128, 128, 64, 64]
+    hidden_layers: List[int] = [1024, 512, 256]
     policy_net = Net(in_features, out_features, hidden_layers)
     target_net = Net(in_features, out_features, hidden_layers)
     training_params = TrainingParameters(
@@ -191,8 +191,8 @@ def main(
             # dqn.push_transition_and_optimize_automatically(transition, output_net_dir)
             dqn.push_transition(transition)
             new_collect_count += 1
-            if new_collect_count >= training_params.batch_size * 10:
-                for _ in range(10):
+            if new_collect_count >= training_params.batch_size * 50:
+                for _ in range(50):
                     dqn.optimize_model()
                 new_collect_count = 0
 
