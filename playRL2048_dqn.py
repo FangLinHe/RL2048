@@ -67,8 +67,8 @@ def make_state_one_hot(tile: Tile) -> Sequence[float]:
     return [float(one_hot_value) for row in one_hot_grid for one_hot_value in row]
 
 
-INVALID_MOVEMENT_REWARD: float = -(2**3)
-GAME_OVER_REWARD: float = -(2**6)
+INVALID_MOVEMENT_REWARD: float = -(2**8)
+GAME_OVER_REWARD: float = -(2**12)
 
 
 def write_json(move_failures, total_scores, max_grids, total_rewards, filepath: str):
@@ -110,15 +110,15 @@ def main(
     target_net = Net(in_features, out_features, hidden_layers)
     training_params = TrainingParameters(
         memory_capacity=20000,
-        gamma=0.99,
+        gamma=0.99,  # 0.99,
         batch_size=128,
         lr=1e-4,
-        lr_step_sizes=[10000, 30000, 50000, 70000],
+        lr_step_sizes=[100000, 300000, 500000, 700000],
         lr_gamma=0.1,
         eps_start=0.9,
         eps_end=0.05,
         eps_decay=10000,
-        TAU=0.01,  # 0.005
+        TAU=0.005,
         save_network_steps=100,
     )
 
@@ -179,7 +179,7 @@ def main(
                 state=cur_state,
                 action=action,
                 next_state=next_state,
-                reward=reward / (2**16),
+                reward=reward / 256,
                 game_over=game_engine.game_is_over,
             )
             cur_state = next_state
@@ -191,8 +191,9 @@ def main(
             # dqn.push_transition_and_optimize_automatically(transition, output_net_dir)
             dqn.push_transition(transition)
             new_collect_count += 1
-            if new_collect_count >= training_params.batch_size:
-                dqn.optimize_model()
+            if new_collect_count >= training_params.batch_size * 10:
+                for _ in range(10):
+                    dqn.optimize_model()
                 new_collect_count = 0
 
             if show_board:

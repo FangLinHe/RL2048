@@ -46,7 +46,7 @@ class DQN:
         self.output_net_dir: str = output_net_dir
 
         self.training_params = training_params
-        self.loss_fn: nn.Module = nn.SmoothL1Loss()
+        self.loss_fn: nn.Module = nn.HuberLoss()  # nn.MSELoss()
         self.optimizer: optim.Optimizer = optim.AdamW(
             self.policy_net.parameters(), training_params.lr, amsgrad=True
         )
@@ -101,20 +101,20 @@ class DQN:
             self.training_params.gamma * next_state_values
         ) * batch.games_over.logical_not().type_as(batch.rewards)
         loss = self.loss_fn(state_action_values, expected_state_action_values)
-        # if self.optimize_steps % self.training_params.save_network_steps == 0:
-        #     with torch.no_grad():
-        #         print(f"self.target_net(batch.next_states):\n{self.target_net(batch.next_states)}")
-        #         print(f"expected_state_action_values: {expected_state_action_values.squeeze(1)}")
-        #         print(f"batch.rewards: {batch.rewards.squeeze(1)}")
-        #         print(f"self.policy_net(batch.states): {self.policy_net(batch.states)}")
-        #         print(f"loss: {loss}, min values: {self.target_net(batch.next_states).min().item()}, max values: {self.target_net(batch.next_states).max().item()}")
-        #     breakpoint()
+        # if self.optimize_steps % (self.training_params.save_network_steps * 10)== 0:
+        # with torch.no_grad():
+        #     print(f"self.target_net(batch.next_states).max(1):\n{self.target_net(batch.next_states).max(1)}")
+        #     print(f"expected_state_action_values: {expected_state_action_values.squeeze(1)}")
+        #     print(f"batch.rewards: {batch.rewards.squeeze(1)}")
+        #     print(f"self.policy_net(batch.states): {self.policy_net(batch.states)}")
+        #     print(f"loss: {loss}, min values: {self.target_net(batch.next_states).min().item()}, max values: {self.target_net(batch.next_states).max().item()}")
+        # breakpoint()
         self.losses.append(loss.item())
 
         self.optimizer.zero_grad()
         loss.backward()
         # In-place gradient clipping
-        torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
+        torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 1.0)
         self.optimizer.step()
         self.scheduler.step()
 
