@@ -105,12 +105,23 @@ def main(
     # DQN part
     in_features: int = tile.width * tile.height * 16
     out_features: int = len(Action)
-    hidden_layers: List[int] = [1024, 512, 256]
-    policy_net = Net(in_features, out_features, hidden_layers)
-    target_net = Net(in_features, out_features, hidden_layers)
+    hidden_layers: List[int] = [512, 512]
+    residual_mid_feature_sizes: List[int] = [0, 128]
+    policy_net = Net(
+        in_features,
+        out_features,
+        hidden_layers,
+        residual_mid_feature_sizes=residual_mid_feature_sizes,
+    )
+    target_net = Net(
+        in_features,
+        out_features,
+        hidden_layers,
+        residual_mid_feature_sizes=residual_mid_feature_sizes,
+    )
     training_params = TrainingParameters(
         memory_capacity=20000,
-        gamma=0.99,  # 0.99,
+        gamma=0.99,
         batch_size=128,
         lr=1e-4,
         lr_decay_milestones=[15000, 30000, 50000, 70000],
