@@ -1,3 +1,4 @@
+from email.policy import Policy
 import os
 import random
 import torch
@@ -32,6 +33,11 @@ class TrainingParameters(NamedTuple):
 script_file_path = os.path.dirname(os.path.abspath(__file__))
 
 
+class PolicyNetOutput(NamedTuple):
+    expected_value: float
+    action: Action
+
+
 class DQN:
     def __init__(
         self,
@@ -63,18 +69,22 @@ class DQN:
 
         self.losses: List[float] = []
 
-    def get_action_epsilon_greedy(self, state: Sequence[float]) -> Action:
+    @staticmethod
+    def get_action(policy_net: nn.Module, state: Sequence[float]) -> PolicyNetOutput:
         state_tensor: Tensor = torch.tensor(state).view((1, -1))
+        best_value, best_action = policy_net(state_tensor).max(1)
+        return PolicyNetOutput(best_value.item(), Action(best_action.item()))
+
+    def get_action_epsilon_greedy(self, state: Sequence[float]) -> Action:
         eps_threshold = self.training_params.eps_end + (
             self.training_params.eps_start - self.training_params.eps_end
         ) * math.exp(-1.0 * self.optimize_steps / self.training_params.eps_decay)
 
         if random.random() > eps_threshold:
-            with torch.no_grad():
-                self.policy_net.eval()
-                _best_value, best_action = self.policy_net(state_tensor).max(1)
-                self.policy_net.train()
-            return Action(best_action.item())
+            self.policy_net.eval()
+            best_action = self.get_action(self.policy_net, state).action
+            self.policy_net.train()
+            return best_action
 
         return Action(random.randrange(len(Action)))
 

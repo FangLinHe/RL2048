@@ -10,7 +10,8 @@ import math
 import os
 
 from datetime import datetime
-from RL2048.game_engine import GameEngine
+from random import shuffle
+from RL2048.game_engine import GameEngine, MoveResult
 from RL2048.tile import Tile
 from RL2048.tile_plotter import TilePlotter, PlotProperties
 from RL2048.DQN.dqn import TrainingParameters, DQN
@@ -18,7 +19,15 @@ from RL2048.DQN.net import Net
 from RL2048.DQN.replay_memory import Action, Transition
 from typing import List, Sequence
 
+import torch
+
 from RL2048.DQN.dqn import DQN
+
+
+PREDEFINED_NETWORKS: List[str] = {
+    "layers_1024_512_256",
+    "layers_512_512_residual_0_128",
+}
 
 
 def parse_args():
@@ -48,6 +57,17 @@ def parse_args():
         default=1000,
         type=int,
         help="Max iterations of experiments; set it to negative value to run infinitely",
+    )
+    parser.add_argument(
+        "--trained_net_path",
+        type=str,
+        help="Path to trained network to play DQN automatically",
+    )
+    parser.add_argument(
+        "--network_version",
+        default="layers_1024_512_256",
+        type=str,
+        help="Network version which maps to certain network structure. See `PREDEFINED_NETWORKS` for the names",
     )
     args = parser.parse_args()
 
@@ -86,12 +106,13 @@ def write_json(move_failures, total_scores, max_grids, total_rewards, filepath: 
             shutil.move(tmp_file, filepath)
 
 
-def main(
+def train(
     show_board: bool,
     print_results: bool,
     output_json_prefix: str,
     output_net_prefix: str,
     max_iters: int,
+    network_version: str,
 ):
     tile: Tile = Tile(width=4, height=4)
     plot_properties: PlotProperties = PlotProperties()
@@ -105,8 +126,17 @@ def main(
     # DQN part
     in_features: int = tile.width * tile.height * 16
     out_features: int = len(Action)
-    hidden_layers: List[int] = [512, 512]
-    residual_mid_feature_sizes: List[int] = [0, 128]
+    if network_version == "layers_1024_512_256":
+        hidden_layers: List[int] = [1024, 512, 256]
+        residual_mid_feature_sizes: List[int] = []
+    elif network_version == "layers_512_512_residual_0_128":
+        hidden_layers: List[int] = [512, 512]
+        residual_mid_feature_sizes: List[int] = [0, 128]
+    else:
+        raise NameError(
+            f"Network version {network_version} not in {PREDEFINED_NETWORKS}."
+        )
+
     policy_net = Net(
         in_features,
         out_features,
@@ -243,12 +273,155 @@ def main(
     print(f"See results in {output_json_fn}.")
 
 
+def move_with_action(game_engine: GameEngine, action: Action) -> MoveResult:
+    if action == Action.UP:
+        return game_engine.move_up()
+    elif action == Action.DOWN:
+        return game_engine.move_down()
+    elif action == Action.LEFT:
+        return game_engine.move_left()
+
+    # action == Action.RIGHT
+    return game_engine.move_right()
+
+
+def eval(
+    show_board: bool,
+    print_results: bool,
+    output_json_prefix: str,
+    max_iters: int,
+    trained_net_path: str,
+    network_version: str,
+):
+    tile: Tile = Tile(width=4, height=4)
+    plot_properties: PlotProperties = PlotProperties()
+    plotter: TilePlotter = TilePlotter(tile, plot_properties)
+    game_engine: GameEngine = GameEngine(tile)
+
+    move_failures: List[int] = []
+    total_scores: List[int] = []
+    max_grids: List[int] = []
+
+    # DQN part
+    in_features: int = tile.width * tile.height * 16
+    out_features: int = len(Action)
+    if network_version == "layers_1024_512_256":
+        hidden_layers: List[int] = [1024, 512, 256]
+        residual_mid_feature_sizes: List[int] = []
+    elif network_version == "layers_512_512_residual_0_128":
+        hidden_layers: List[int] = [512, 512]
+        residual_mid_feature_sizes: List[int] = [0, 128]
+    else:
+        raise NameError(
+            f"Network version {network_version} not in {PREDEFINED_NETWORKS}."
+        )
+
+    policy_net = Net(
+        in_features,
+        out_features,
+        hidden_layers,
+        residual_mid_feature_sizes=residual_mid_feature_sizes,
+    )
+    policy_net.eval()
+    policy_net.load_state_dict(torch.load(trained_net_path))
+
+    move_failure = 0
+    date_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_json_fn = f"{output_json_prefix}_{date_time_str}.json"
+
+    iter = 0
+    start_time = time.time()
+    cur_state: Sequence[int] = make_state_one_hot(tile)
+
+    action_candidates: List[Action] = []
+    while iter < max_iters:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+
+            if event.type == pygame.KEYUP and event.key == pygame.K_r:
+                game_engine.reset()
+
+        if not game_engine.game_is_over:
+            policy_net_output = DQN.get_action(policy_net, cur_state)
+            expected_value: float = policy_net_output.expected_value
+            action: Action = policy_net_output.action
+
+            move_result: MoveResult = move_with_action(game_engine, action)
+            if move_result.suc:
+                game_engine.generate_new()
+            else:
+                move_failure += 1
+                action_candidates = [
+                    candidate for candidate in Action if candidate != action
+                ]
+                shuffle(action_candidates)
+                for action in action_candidates:
+                    move_result = move_with_action(game_engine, action)
+                    if move_result.suc:
+                        break
+                    move_failure += 1
+                if not move_result.suc:
+                    raise ValueError("Game is not over yet but all actions failed")
+
+            cur_state = make_state_one_hot(tile)
+
+            if show_board:
+                plotter.plot(game_engine.score)
+            else:
+                tile.reset_animation_grids()
+
+            if game_engine.game_is_over:
+                iter += 1
+                if show_board:
+                    plotter.plot_game_over()
+                move_failures.append(move_failure)
+                move_failure = 0
+                max_grids.append(tile.max_grid())
+                total_scores.append(game_engine.score)
+                if print_results:
+                    print(f"Move failures: {move_failures}")
+                    print(f"Total scores: {total_scores}")
+                    print(f"Max grids: {max_grids}")
+
+                if iter % 10 == 0:
+                    write_json(
+                        move_failures,
+                        total_scores,
+                        max_grids,
+                        [],  # total_rewards,
+                        output_json_fn,
+                    )
+                game_engine.reset()
+
+    write_json(
+        move_failures, total_scores, max_grids, [], output_json_fn  # total_rewards,
+    )
+    elapsed_sec = time.time() - start_time
+    print(
+        f"Done running {max_iters} times of experiments in {round(elapsed_sec * 1000.0)} millisecond(s)."
+    )
+    print(f"See results in {output_json_fn}.")
+
+
 if __name__ == "__main__":
     args = parse_args()
-    main(
-        args.show_board,
-        args.print_results,
-        args.output_json_prefix,
-        args.output_net_prefix,
-        args.max_iters,
-    )
+    if args.trained_net_path == "":
+        train(
+            args.show_board,
+            args.print_results,
+            args.output_json_prefix,
+            args.output_net_prefix,
+            args.max_iters,
+            args.network_version,
+        )
+    else:
+        eval(
+            args.show_board,
+            args.print_results,
+            args.output_json_prefix,
+            args.max_iters,
+            args.trained_net_path,
+            args.network_version,
+        )
