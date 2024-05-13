@@ -13,7 +13,7 @@ class PlotProperties(NamedTuple):
     grid_space: int = 10
     border_radius: int = 3
     animation_steps: int = 8
-    fps: int = 120
+    fps: int = 60
 
 
 class Animation:
@@ -128,18 +128,18 @@ class TilePlotter:
     def clean_canvas(self):
         self.win.fill(colors.info_board_color)
         text_surface = self.score_font.render(f"Score", True, colors.dark_foreground)
-        text_rect = text_surface.get_rect(
-            center=(self.win.get_width() // 2, 20)
-        )
+        text_rect = text_surface.get_rect(center=(self.win.get_width() // 2, 20))
         self.win.blit(text_surface, text_rect)
 
     def plot_score(self, score):
         text_surface = self.font.render(f"{score}", True, colors.dark_foreground)
         text_rect = text_surface.get_rect(
-            center=(self.win.get_width() // 2, self.plot_properties.info_board_height // 2)
+            center=(
+                self.win.get_width() // 2,
+                self.plot_properties.info_board_height // 2,
+            )
         )
         self.win.blit(text_surface, text_rect)
-
 
     def plot(self, score: int):
         animations = [
@@ -152,7 +152,9 @@ class TilePlotter:
             for grids in self.tile.animation_grids.values()
             for grid in grids
         ]
-        moving_locations = {a.grid.dst_loc for a in animations if a.grid.dst_loc != a.grid.src_loc}
+        moving_locations = {
+            a.grid.dst_loc for a in animations if a.grid.dst_loc != a.grid.src_loc
+        }
         self.tile.reset_animation_grids()
 
         src_rects = [
@@ -177,7 +179,9 @@ class TilePlotter:
                             self.plot_grid(grid_value, rect, self.grid_tlwh(x, y))
                         else:
                             self.plot_grid(0, rect, self.grid_tlwh(x, y))
-                self.win.blit(self.game_surface, (0, self.plot_properties.info_board_height))
+                self.win.blit(
+                    self.game_surface, (0, self.plot_properties.info_board_height)
+                )
                 pygame.display.update()
 
                 # Plot moving grids
@@ -187,19 +191,27 @@ class TilePlotter:
                     tlwh = (*loc, grid_w, grid_h)
                     dx = loc.x - rect.x
                     dy = loc.y - rect.y
-                    affected_areas.append(pygame.Rect(
-                        rect.left if dx > 0 else rect.left + dx,
-                        self.plot_properties.info_board_height + (rect.top if dy > 0 else rect.top + dy),
-                        rect.width + abs(dx),
-                        rect.height + abs(dy)
-                    ))
+                    affected_areas.append(
+                        pygame.Rect(
+                            rect.left if dx > 0 else rect.left + dx,
+                            self.plot_properties.info_board_height
+                            + (rect.top if dy > 0 else rect.top + dy),
+                            rect.width + abs(dx),
+                            rect.height + abs(dy),
+                        )
+                    )
                     rect.move_ip(dx, dy)
-                    val = animation.grid.dst_val if t == steps - 1 else animation.grid.src_val
+                    val = (
+                        animation.grid.dst_val
+                        if t == steps - 1
+                        else animation.grid.src_val
+                    )
                     self.plot_grid(val, rect, tlwh)
-                self.win.blit(self.game_surface, (0, self.plot_properties.info_board_height))
+                self.win.blit(
+                    self.game_surface, (0, self.plot_properties.info_board_height)
+                )
                 pygame.display.update(affected_areas)
                 self.clock.tick(self.plot_properties.fps)
-
 
         # Plot all grids after the animation
         self.clean_canvas()
@@ -211,17 +223,21 @@ class TilePlotter:
         self.win.blit(self.game_surface, (0, self.plot_properties.info_board_height))
         self.plot_score(score)
         pygame.display.update()
+        pygame.time.delay(200)
         # self.clock.tick(self.plot_properties.fps)
 
     def plot_game_over(self):
-        game_over_rect = pygame.Rect(0, 0, self.game_surface.get_width(), self.game_surface.get_height())
+        game_over_rect = pygame.Rect(
+            0, 0, self.game_surface.get_width(), self.game_surface.get_height()
+        )
         game_over_surface = pygame.Surface(game_over_rect.size, pygame.SRCALPHA)
         game_over_surface.fill((255, 255, 255, 128))
         self.game_surface.blit(game_over_surface, (0, 0))
-        text_surface = self.score_font.render(f"Game over, press R to restart", True, colors.dark_foreground)
-        text_rect = text_surface.get_rect(
-            center=game_over_rect.center
+        text_surface = self.score_font.render(
+            f"Game over, press R to restart", True, colors.dark_foreground
         )
+        text_rect = text_surface.get_rect(center=game_over_rect.center)
         self.game_surface.blit(text_surface, text_rect)
         self.win.blit(self.game_surface, (0, self.plot_properties.info_board_height))
         pygame.display.update()
+        pygame.time.delay(2000)
