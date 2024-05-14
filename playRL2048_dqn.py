@@ -62,7 +62,13 @@ def parse_args():
         "--trained_net_path",
         type=str,
         default="",
-        help="Path to trained network to play DQN automatically",
+        help="Path to pre-trained or trained network to train / play DQN. If in train mode, "
+        "the weights are initialized from pre-trained model.",
+    )
+    parser.add_argument(
+        "--eval",
+        action="store_true",
+        help="Train mode or eval mode. If eval mode, --trained_net_path must be specified.",
     )
     parser.add_argument(
         "--network_version",
@@ -114,6 +120,7 @@ def train(
     output_net_prefix: str,
     max_iters: int,
     network_version: str,
+    pre_trained_net_path: str = "",
 ):
     tile: Tile = Tile(width=4, height=4)
     plot_properties: PlotProperties = PlotProperties()
@@ -144,6 +151,8 @@ def train(
         hidden_layers,
         residual_mid_feature_sizes=residual_mid_feature_sizes,
     )
+    if pre_trained_net_path != "":
+        policy_net.load_state_dict(torch.load(pre_trained_net_path))
     target_net = Net(
         in_features,
         out_features,
@@ -413,21 +422,22 @@ def eval(
 
 if __name__ == "__main__":
     args = parse_args()
-    if args.trained_net_path is None or args.trained_net_path == "":
-        train(
-            args.show_board,
-            args.print_results,
-            args.output_json_prefix,
-            args.output_net_prefix,
-            args.max_iters,
-            args.network_version,
-        )
-    else:
+    if args.eval:
+        assert args.trained_net_path is not None and args.trained_net_path != ""
         eval(
             args.show_board,
             args.print_results,
             args.output_json_prefix,
             args.max_iters,
             args.trained_net_path,
+            args.network_version,
+        )
+    else:
+        train(
+            args.show_board,
+            args.print_results,
+            args.output_json_prefix,
+            args.output_net_prefix,
+            args.max_iters,
             args.network_version,
         )
