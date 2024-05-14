@@ -34,6 +34,7 @@ PREDEFINED_NETWORKS: List[str] = {
     "layers_1024_512_256",
     "layers_512_512_residual_0_128",
     "layers_512_256_128_residual_0_64_32",
+    "layers_512_256_256_residual_0_128_128",
 }
 
 
@@ -130,6 +131,9 @@ def load_nets(network_version: str, in_features: int, out_features: int) -> Nets
     elif network_version == "layers_512_256_128_residual_0_64_32":
         hidden_layers: List[int] = [512, 256, 128]
         residual_mid_feature_sizes: List[int] = [0, 64, 32]
+    elif network_version == "layers_512_256_256_residual_0_128_128":
+        hidden_layers: List[int] = [512, 256, 256]
+        residual_mid_feature_sizes: List[int] = [0, 128, 128]
     else:
         raise NameError(
             f"Network version {network_version} not in {PREDEFINED_NETWORKS}."
