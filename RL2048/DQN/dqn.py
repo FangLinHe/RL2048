@@ -78,10 +78,17 @@ class DQN:
         self.losses: List[float] = []
 
     @staticmethod
-    def get_action(policy_net: nn.Module, state: Sequence[float]) -> PolicyNetOutput:
+    def infer_action(policy_net: nn.Module, state: Sequence[float]) -> PolicyNetOutput:
         state_tensor: Tensor = torch.tensor(state).view((1, -1))
         best_value, best_action = policy_net(state_tensor).max(1)
         return PolicyNetOutput(best_value.item(), Action(best_action.item()))
+
+    def get_best_action(self, state: Sequence[float]) -> Action:
+        self.policy_net.eval()
+        best_action = self.infer_action(self.policy_net, state).action
+        self.policy_net.train()
+        return best_action
+
 
     def get_action_epsilon_greedy(self, state: Sequence[float]) -> Action:
         eps_threshold = self.training_params.eps_end + (
@@ -89,10 +96,7 @@ class DQN:
         ) * math.exp(-1.0 * self.optimize_steps / self.training_params.eps_decay)
 
         if random.random() > eps_threshold:
-            self.policy_net.eval()
-            best_action = self.get_action(self.policy_net, state).action
-            self.policy_net.train()
-            return best_action
+            return self.get_best_action(state)
 
         return Action(random.randrange(len(Action)))
 
@@ -119,14 +123,6 @@ class DQN:
             self.training_params.gamma * next_state_values
         ) * batch.games_over.logical_not().type_as(batch.rewards)
         loss = self.loss_fn(state_action_values, expected_state_action_values)
-        # if self.optimize_steps % (self.training_params.save_network_steps * 10)== 0:
-        # with torch.no_grad():
-        #     print(f"self.target_net(batch.next_states).max(1):\n{self.target_net(batch.next_states).max(1)}")
-        #     print(f"expected_state_action_values: {expected_state_action_values.squeeze(1)}")
-        #     print(f"batch.rewards: {batch.rewards.squeeze(1)}")
-        #     print(f"self.policy_net(batch.states): {self.policy_net(batch.states)}")
-        #     print(f"loss: {loss}, min values: {self.target_net(batch.next_states).min().item()}, max values: {self.target_net(batch.next_states).max().item()}")
-        # breakpoint()
         self.losses.append(loss.item())
 
         self.optimizer.zero_grad()

@@ -366,7 +366,7 @@ def eval(
 
         if not game_engine.game_is_over:
             start_inf_time = time.time()
-            policy_net_output = DQN.get_action(policy_net, cur_state)
+            policy_net_output = DQN.infer_action(policy_net, cur_state)
             inf_times.append(time.time() - start_inf_time)
             action: Action = policy_net_output.action
 
