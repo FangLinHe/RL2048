@@ -5,7 +5,7 @@ import torch
 import math
 
 from datetime import datetime
-from typing import NamedTuple, List, Sequence
+from typing import NamedTuple, List, Sequence, Union
 from .net import Net
 from .replay_memory import Action, Batch, ReplayMemory, Transition
 from torch import Tensor, nn, optim
@@ -16,7 +16,7 @@ class TrainingParameters(NamedTuple):
     gamma: float = 0.99
     batch_size: int = 64
     lr: float = 0.001
-    lr_decay_milestones: List[int] = [100, 80, 60]
+    lr_decay_milestones: Union[int, List[int]] = 100
     lr_gamma: int = 0.1
 
     # for epsilon-greedy algorithm
@@ -57,11 +57,18 @@ class DQN:
         self.optimizer: optim.Optimizer = optim.AdamW(
             self.policy_net.parameters(), training_params.lr, amsgrad=True
         )
-        self.scheduler = optim.lr_scheduler.MultiStepLR(
-            self.optimizer,
-            self.training_params.lr_decay_milestones,
-            self.training_params.gamma,
-        )
+        if isinstance(self.training_params.lr_decay_milestones, int):
+            self.scheduler = optim.lr_scheduler.StepLR(
+                self.optimizer,
+                self.training_params.lr_decay_milestones,
+                self.training_params.gamma,
+            )
+        else:
+            self.scheduler = optim.lr_scheduler.MultiStepLR(
+                self.optimizer,
+                self.training_params.lr_decay_milestones,
+                self.training_params.gamma,
+            )
         self.memory = ReplayMemory(self.training_params.memory_capacity)
 
         self.optimize_steps: int = 0
