@@ -17,11 +17,17 @@ from RL2048.tile_plotter import TilePlotter, PlotProperties
 from RL2048.DQN.dqn import TrainingParameters, DQN
 from RL2048.DQN.net import Net
 from RL2048.DQN.replay_memory import Action, Transition
-from typing import List, Sequence
+from typing import List, NamedTuple, Sequence
 
 import torch
+from torch import nn
 
 from RL2048.DQN.dqn import DQN
+
+
+class NetsTuple(NamedTuple):
+    policy_net: nn.Module
+    target_net: nn.Module
 
 
 PREDEFINED_NETWORKS: List[str] = {
@@ -114,6 +120,36 @@ def write_json(move_failures, total_scores, max_grids, total_rewards, filepath: 
             shutil.move(tmp_file, filepath)
 
 
+def load_nets(network_version: str, in_features: int, out_features: int) -> NetsTuple:
+    if network_version == "layers_1024_512_256":
+        hidden_layers: List[int] = [1024, 512, 256]
+        residual_mid_feature_sizes: List[int] = []
+    elif network_version == "layers_512_512_residual_0_128":
+        hidden_layers: List[int] = [512, 512]
+        residual_mid_feature_sizes: List[int] = [0, 128]
+    elif network_version == "layers_512_256_128_residual_0_64_32":
+        hidden_layers: List[int] = [512, 256, 128]
+        residual_mid_feature_sizes: List[int] = [0, 64, 32]
+    else:
+        raise NameError(
+            f"Network version {network_version} not in {PREDEFINED_NETWORKS}."
+        )
+
+    policy_net = Net(
+        in_features,
+        out_features,
+        hidden_layers,
+        residual_mid_feature_sizes=residual_mid_feature_sizes,
+    )
+    target_net = Net(
+        in_features,
+        out_features,
+        hidden_layers,
+        residual_mid_feature_sizes=residual_mid_feature_sizes,
+    )
+    return NetsTuple(policy_net, target_net)
+
+
 def train(
     show_board: bool,
     print_results: bool,
@@ -135,34 +171,14 @@ def train(
     # DQN part
     in_features: int = tile.width * tile.height * 16
     out_features: int = len(Action)
-    if network_version == "layers_1024_512_256":
-        hidden_layers: List[int] = [1024, 512, 256]
-        residual_mid_feature_sizes: List[int] = []
-    elif network_version == "layers_512_512_residual_0_128":
-        hidden_layers: List[int] = [512, 512]
-        residual_mid_feature_sizes: List[int] = [0, 128]
-    elif network_version == "layers_512_256_128_residual_0_64_32":
-        hidden_layers: List[int] = [512, 256, 128]
-        residual_mid_feature_sizes: List[int] = [0, 64, 32]
-    else:
-        raise NameError(
-            f"Network version {network_version} not in {PREDEFINED_NETWORKS}."
-        )
-
-    policy_net = Net(
+    policy_net, target_net = load_nets(
+        network_version,
         in_features,
         out_features,
-        hidden_layers,
-        residual_mid_feature_sizes=residual_mid_feature_sizes,
     )
     if pre_trained_net_path != "":
         policy_net.load_state_dict(torch.load(pre_trained_net_path))
-    target_net = Net(
-        in_features,
-        out_features,
-        hidden_layers,
-        residual_mid_feature_sizes=residual_mid_feature_sizes,
-    )
+
     training_params = TrainingParameters(
         memory_capacity=20000,
         gamma=0.99,
@@ -320,23 +336,8 @@ def eval(
     # DQN part
     in_features: int = tile.width * tile.height * 16
     out_features: int = len(Action)
-    if network_version == "layers_1024_512_256":
-        hidden_layers: List[int] = [1024, 512, 256]
-        residual_mid_feature_sizes: List[int] = []
-    elif network_version == "layers_512_512_residual_0_128":
-        hidden_layers: List[int] = [512, 512]
-        residual_mid_feature_sizes: List[int] = [0, 128]
-    else:
-        raise NameError(
-            f"Network version {network_version} not in {PREDEFINED_NETWORKS}."
-        )
+    policy_net = load_nets(network_version, in_features, out_features).policy_net
 
-    policy_net = Net(
-        in_features,
-        out_features,
-        hidden_layers,
-        residual_mid_feature_sizes=residual_mid_feature_sizes,
-    )
     policy_net.eval()
     policy_net.load_state_dict(torch.load(trained_net_path))
 
