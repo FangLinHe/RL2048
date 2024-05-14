@@ -351,6 +351,9 @@ def eval(
 
     action_candidates: List[Action] = []
     inf_times = []
+
+    prev_score: int = game_engine.score
+    score_not_increasing_count: int = 0
     while iter < max_iters:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -359,12 +362,12 @@ def eval(
 
             if event.type == pygame.KEYUP and event.key == pygame.K_r:
                 game_engine.reset()
+                prev_score: int = game_engine.score
 
         if not game_engine.game_is_over:
             start_inf_time = time.time()
             policy_net_output = DQN.get_action(policy_net, cur_state)
             inf_times.append(time.time() - start_inf_time)
-            expected_value: float = policy_net_output.expected_value
             action: Action = policy_net_output.action
 
             move_result: MoveResult = move_with_action(game_engine, action)
@@ -383,6 +386,15 @@ def eval(
                     move_failure += 1
                 if not move_result.suc:
                     raise ValueError("Game is not over yet but all actions failed")
+
+            if game_engine.score == prev_score:
+                score_not_increasing_count += 1
+            else:
+                score_not_increasing_count = 0
+            prev_score = game_engine.score
+
+            if score_not_increasing_count > 10:
+                breakpoint()
 
             cur_state = make_state_one_hot(tile)
 
@@ -414,14 +426,14 @@ def eval(
                     )
                 game_engine.reset()
 
-    write_json(
-        move_failures, total_scores, max_grids, [], output_json_fn  # total_rewards,
-    )
+    write_json(move_failures, total_scores, max_grids, [], output_json_fn)
     elapsed_sec = time.time() - start_time
     print(
         f"Done running {max_iters} times of experiments in {round(elapsed_sec * 1000.0)} millisecond(s)."
     )
-    print(f"Average inference time: {sum(inf_times) / len(inf_times)}")
+    print(
+        f"Average inference time: {(sum(inf_times) / len(inf_times)) * 1000.0} millisecond(s)"
+    )
     print(f"See results in {output_json_fn}.")
 
 
