@@ -168,7 +168,7 @@ def train(
         gamma=0.99,
         batch_size=128,
         lr=1e-3,
-        lr_decay_milestones=[15000, 30000, 50000, 70000],
+        lr_decay_milestones=[30000, 50000, 70000, 90000],
         lr_gamma=0.1,
         eps_start=0.9,
         eps_end=0.05,
