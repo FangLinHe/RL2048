@@ -9,47 +9,60 @@ import torch.functional as F
 class Residual(nn.Module):
     def __init__(
         self,
-        in_feature_size: int,
-        mid_feature_size: int,
+        in_feature_size: int,  # 512
+        mid_feature_size: int,  # 64
+        out_feature_size: int,  # 256
         activation_layer: Optional[nn.Module] = nn.ReLU,
         activation_after_bn: bool = True,
     ):
+        # Two possibilities:
+        # 1. Input / output feature sizes are the same, e.g.:
+        #    x - (Linear 512x128) - (Linear 128x128) - (Linear 128x512) - sum - y
+        #     \------------------------------------------------------------/
+        # 2. Input / output feature sizes are different, e.g.:
+        #    x - (Linear 512x256) - (Linear 256x64) - (Linear 64x256) - sum - y
+        #     \--------------------------------------------(AvgPool(2))----/
         super(Residual, self).__init__()
+        assert in_feature_size % out_feature_size == 0
         if activation_after_bn:
             self.block1 = nn.Sequential(
-                nn.Linear(in_feature_size, mid_feature_size),
-                nn.BatchNorm1d(num_features=mid_feature_size),
+                nn.Linear(in_feature_size, out_feature_size),
+                nn.BatchNorm1d(num_features=out_feature_size),
                 activation_layer(),
             )
             self.block2 = nn.Sequential(
-                nn.Linear(mid_feature_size, mid_feature_size),
+                nn.Linear(out_feature_size, mid_feature_size),
                 nn.BatchNorm1d(num_features=mid_feature_size),
                 activation_layer(),
             )
             self.block3 = nn.Sequential(
-                nn.Linear(mid_feature_size, in_feature_size),
-                nn.BatchNorm1d(num_features=in_feature_size),
+                nn.Linear(mid_feature_size, out_feature_size),
+                nn.BatchNorm1d(num_features=out_feature_size),
             )
         else:  # activation before bn
             self.block1 = nn.Sequential(
-                nn.Linear(in_feature_size, mid_feature_size),
+                nn.Linear(in_feature_size, out_feature_size),
                 activation_layer(),
-                nn.BatchNorm1d(num_features=mid_feature_size),
+                nn.BatchNorm1d(num_features=out_feature_size),
             )
             self.block2 = nn.Sequential(
-                nn.Linear(mid_feature_size, mid_feature_size),
+                nn.Linear(out_feature_size, mid_feature_size),
                 activation_layer(),
                 nn.BatchNorm1d(num_features=mid_feature_size),
             )
             self.blocks3 = nn.Sequential(
-                nn.Linear(mid_feature_size, in_feature_size),
-                nn.BatchNorm1d(num_features=in_feature_size),
+                nn.Linear(mid_feature_size, out_feature_size),
+                nn.BatchNorm1d(num_features=out_feature_size),
             )
-        self.activation = activation_layer()
+        self.pool_or_identity = (
+            nn.AvgPool1d(in_feature_size // out_feature_size)
+            if in_feature_size != out_feature_size
+            else nn.Identity()
+        )
 
     def forward(self, x):
         y = self.block3(self.block2(self.block1(x)))
-        return x + y
+        return self.pool_or_identity(x) + y
 
 
 class Net(nn.Module):
@@ -76,10 +89,12 @@ class Net(nn.Module):
             ):
                 layers.append(nn.Linear(in_features, out_features, bias=bias))
             else:
-                assert in_features == out_features
                 layers.append(
                     Residual(
-                        in_features, residual_mid_feature_sizes[i], activation_layer
+                        in_features,
+                        residual_mid_feature_sizes[i],
+                        out_features,
+                        activation_layer,
                     )
                 )
                 is_residual = True
@@ -108,3 +123,7 @@ if __name__ == "__main__":
     net2 = Net(16, 4, [32, 32], residual_mid_feature_sizes=[0, 16])
     net2.eval()
     print(f"Output tensor: {net2(input_tensor)}")
+
+    net3 = Net(16, 4, [32, 16], residual_mid_feature_sizes=[0, 8])
+    net3.eval()
+    print(f"Output tensor: {net3(input_tensor)}")

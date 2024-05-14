@@ -27,6 +27,7 @@ from RL2048.DQN.dqn import DQN
 PREDEFINED_NETWORKS: List[str] = {
     "layers_1024_512_256",
     "layers_512_512_residual_0_128",
+    "layers_512_256_128_residual_0_64_32",
 }
 
 
@@ -140,6 +141,9 @@ def train(
     elif network_version == "layers_512_512_residual_0_128":
         hidden_layers: List[int] = [512, 512]
         residual_mid_feature_sizes: List[int] = [0, 128]
+    elif network_version == "layers_512_256_128_residual_0_64_32":
+        hidden_layers: List[int] = [512, 256, 128]
+        residual_mid_feature_sizes: List[int] = [0, 64, 32]
     else:
         raise NameError(
             f"Network version {network_version} not in {PREDEFINED_NETWORKS}."
@@ -162,7 +166,7 @@ def train(
     training_params = TrainingParameters(
         memory_capacity=20000,
         gamma=0.99,
-        batch_size=256,
+        batch_size=128,
         lr=1e-3,
         lr_decay_milestones=[15000, 30000, 50000, 70000],
         lr_gamma=0.1,
@@ -440,4 +444,5 @@ if __name__ == "__main__":
             args.output_net_prefix,
             args.max_iters,
             args.network_version,
+            args.trained_net_path,
         )
