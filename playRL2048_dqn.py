@@ -187,15 +187,15 @@ def train(
         memory_capacity=20000,
         gamma=0.99,
         batch_size=128,
-        lr=1e-4,
-        lr_decay_milestones=20000, #[15000, 30000, 50000, 70000],
-        lr_gamma=0.5,
-        eps_start=0.7,
+        lr=5e-4,
+        lr_decay_milestones=[15000, 30000, 50000, 70000],
+        lr_gamma=0.1,
+        eps_start=0.9,
         eps_end=0.05,
-        eps_decay=30000,
+        eps_decay=10000,
         TAU=0.005,
         save_network_steps=2000,
-        print_loss_steps=2000,
+        print_loss_steps=500,
     )
 
     move_failure = 0
