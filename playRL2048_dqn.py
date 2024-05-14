@@ -187,16 +187,17 @@ def train(
         memory_capacity=20000,
         gamma=0.99,
         batch_size=128,
-        lr=5e-4,
+        lr=1e-4,
         lr_decay_milestones=[15000, 30000, 50000, 70000],
         lr_gamma=0.1,
-        eps_start=0.9,
+        eps_start=0.7,
         eps_end=0.05,
         eps_decay=10000,
         TAU=0.005,
         save_network_steps=2000,
         print_loss_steps=500,
     )
+    reward_norm_factor: int = 32768  # reward / reward_norm_factor for value function
 
     move_failure = 0
     date_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -255,7 +256,7 @@ def train(
                 state=cur_state,
                 action=action,
                 next_state=next_state,
-                reward=reward / 256,
+                reward=reward / reward_norm_factor,
                 game_over=game_engine.game_is_over,
             )
             cur_state = next_state
