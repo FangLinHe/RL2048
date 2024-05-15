@@ -10,7 +10,7 @@ class Residual(nn.Module):
         in_feature_size: int,
         mid_feature_size: int,
         out_feature_size: int,
-        activation_layer: Optional[nn.Module] = nn.ReLU,
+        activation_layer: nn.Module,
         activation_after_bn: bool = True,
     ):
         # Two possibilities:
@@ -30,12 +30,12 @@ class Residual(nn.Module):
             self.block1 = nn.Sequential(
                 nn.Linear(in_feature_size, mid_feature_size),
                 nn.BatchNorm1d(num_features=mid_feature_size),
-                activation_layer(),
+                activation_layer,
             )
             self.block2 = nn.Sequential(
                 nn.Linear(mid_feature_size, mid_feature_size),
                 nn.BatchNorm1d(num_features=mid_feature_size),
-                activation_layer(),
+                activation_layer,
             )
             self.block3 = nn.Sequential(
                 nn.Linear(mid_feature_size, out_feature_size),
@@ -44,12 +44,12 @@ class Residual(nn.Module):
         else:  # activation before bn
             self.block1 = nn.Sequential(
                 nn.Linear(in_feature_size, mid_feature_size),
-                activation_layer(),
+                activation_layer,
                 nn.BatchNorm1d(num_features=mid_feature_size),
             )
             self.block2 = nn.Sequential(
                 nn.Linear(mid_feature_size, mid_feature_size),
-                activation_layer(),
+                activation_layer,
                 nn.BatchNorm1d(num_features=mid_feature_size),
             )
             self.blocks3 = nn.Sequential(
@@ -73,26 +73,25 @@ class Net(nn.Module):
         input_feature_size: int,
         output_feature_size: int,
         hidden_layer_sizes: List[int],
+        activation_layer: nn.Module,
         bias: bool = True,
-        activation_layer: Optional[nn.Module] = nn.ReLU,
         residual_mid_feature_sizes: Optional[List[int]] = None,
     ):
         super()
-        if residual_mid_feature_sizes is not None and len(
-            residual_mid_feature_sizes
-        ) != len(hidden_layer_sizes):
+        if residual_mid_feature_sizes is None:
+            residual_mid_feature_sizes = []
+        if len(residual_mid_feature_sizes) not in {0, len(hidden_layer_sizes)}:
             raise ValueError(
                 "`residual_mid_feature_sizes` should be either None or have the same "
                 f"length as `hidden_layer_sizes` ({len(hidden_layer_sizes)}), but got "
                 f"({len(residual_mid_feature_sizes)})"
             )
         in_features = input_feature_size
-        layers = []
+        layers: List[nn.Module] = []
+
+        is_residual = len(residual_mid_feature_sizes) > 0
         for i, out_features in enumerate(hidden_layer_sizes):
-            is_residual = False
-            if residual_mid_feature_sizes is None:
-                layers.append(nn.Linear(in_features, out_features, bias=bias))
-            else:
+            if is_residual:
                 layers.append(
                     Residual(
                         in_features,
@@ -101,11 +100,15 @@ class Net(nn.Module):
                         activation_layer,
                     )
                 )
-                is_residual = True
-            if not is_residual:
-                layers.append(nn.BatchNorm1d(num_features=out_features))
-            if activation_layer is not None:
-                layers.append(activation_layer())
+            else:
+                layers.append(
+                    nn.Sequential(
+                        nn.Linear(in_features, out_features, bias=bias),
+                        nn.BatchNorm1d(num_features=out_features),
+                    )
+                )
+
+            layers.append(activation_layer)
             # if i < len(hidden_layer_sizes) - 1:
             #     layers.append(nn.Dropout())
 
@@ -119,15 +122,15 @@ class Net(nn.Module):
 
 
 if __name__ == "__main__":
-    net = Net(16, 4, [64, 16])
+    net = Net(16, 4, [64, 16], nn.ReLU())
     net.eval()
     input_tensor = torch.rand([1, 16])
     print(f"Output tensor: {net(input_tensor)}")
 
-    net2 = Net(16, 4, [32, 32], residual_mid_feature_sizes=[0, 16])
+    net2 = Net(16, 4, [32, 32], nn.ReLU(), residual_mid_feature_sizes=[0, 16])
     net2.eval()
     print(f"Output tensor: {net2(input_tensor)}")
 
-    net3 = Net(16, 4, [32, 16], residual_mid_feature_sizes=[0, 8])
+    net3 = Net(16, 4, [32, 16], nn.ReLU(), residual_mid_feature_sizes=[0, 8])
     net3.eval()
     print(f"Output tensor: {net3(input_tensor)}")

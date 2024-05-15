@@ -17,7 +17,7 @@ class TrainingParameters(NamedTuple):
     batch_size: int = 64
     lr: float = 0.001
     lr_decay_milestones: Union[int, List[int]] = 100
-    lr_gamma: int = 0.1
+    lr_gamma: float = 0.1
 
     # for epsilon-greedy algorithm
     eps_start: float = 0.9
@@ -42,13 +42,13 @@ class PolicyNetOutput(NamedTuple):
 class DQN:
     def __init__(
         self,
-        policy_net: Net,
-        target_net: Net,
+        policy_net: nn.Module,
+        target_net: nn.Module,
         output_net_dir: str,
         training_params: TrainingParameters,
     ):
-        self.policy_net: Net = policy_net
-        self.target_net: Net = target_net
+        self.policy_net: nn.Module = policy_net
+        self.target_net: nn.Module = target_net
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.output_net_dir: str = output_net_dir
 
@@ -57,6 +57,7 @@ class DQN:
         self.optimizer: optim.Optimizer = optim.AdamW(
             self.policy_net.parameters(), training_params.lr, amsgrad=True
         )
+        self.scheduler: optim.lr_scheduler.LRScheduler
         if isinstance(self.training_params.lr_decay_milestones, int):
             self.scheduler = optim.lr_scheduler.StepLR(
                 self.optimizer,
@@ -166,8 +167,8 @@ class DQN:
 
 
 if __name__ == "__main__":
-    policy_net = Net(2, 4, [16])
-    target_net = Net(2, 4, [16])
+    policy_net = Net(2, 4, [16], nn.ReLU())
+    target_net = Net(2, 4, [16], nn.ReLU())
     training_params = TrainingParameters(
         memory_capacity=1024,
         gamma=0.99,
@@ -191,7 +192,7 @@ if __name__ == "__main__":
         game_over=False,
     )
 
-    with tempfile.TemporaryDirectory as tmp_dir:
+    with tempfile.TemporaryDirectory() as tmp_dir:
         dqn = DQN(policy_net, target_net, tmp_dir, training_params)
 
     dqn.push_transition(t1)

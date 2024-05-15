@@ -33,7 +33,7 @@ class Tile:
             self.grids[loc.y][loc.x] = val
             self.animation_grids[loc].append(MovingGrid(loc, 0, loc, val))
 
-        random_indices = self._cryptogensample(
+        random_indices = self._cryptogen.sample(
             range(self.width * self.height), self.random_start_count
         )
         for index in random_indices:

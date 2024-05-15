@@ -8,10 +8,10 @@ from RL2048.tile_plotter import PlotProperties, TilePlotter
 
 
 def main():
-    tile: Tile = Tile(width=4, height=4)
-    plot_properties: PlotProperties = PlotProperties()
-    plotter: TilePlotter = TilePlotter(tile, plot_properties)
-    game_engine: GameEngine = GameEngine(tile)
+    tile = Tile(width=4, height=4)
+    plot_properties = PlotProperties()
+    plotter = TilePlotter(tile, plot_properties)
+    game_engine = GameEngine(tile)
     plotter.plot(game_engine.score)
 
     while True:

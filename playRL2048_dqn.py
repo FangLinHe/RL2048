@@ -6,10 +6,9 @@ import math
 import os
 import shutil
 import time
-from ctypes import ArgumentError
 from datetime import datetime
 from random import shuffle
-from typing import List, NamedTuple, Sequence
+from typing import List, NamedTuple, Sequence, Set
 
 import pygame
 import torch
@@ -28,7 +27,7 @@ class NetsTuple(NamedTuple):
     target_net: nn.Module
 
 
-PREDEFINED_NETWORKS: List[str] = {
+PREDEFINED_NETWORKS: Set[str] = {
     "layers_1024_512_256",
     "layers_512_512_residual_0_128",
     "layers_512_256_128_residual_0_64_32",
@@ -87,7 +86,7 @@ def parse_args():
     args = parser.parse_args()
 
     if args.eval and args.trained_net_path == "":
-        raise ArgumentError(
+        raise ValueError(
             "`--eval` is specified, so `--trained_net_path` must be specified"
         )
 
@@ -125,18 +124,20 @@ def write_json(move_failures, total_scores, max_grids, total_rewards, filepath: 
 
 
 def load_nets(network_version: str, in_features: int, out_features: int) -> NetsTuple:
+    hidden_layers: List[int]
+    residual_mid_feature_sizes: List[int]
     if network_version == "layers_1024_512_256":
-        hidden_layers: List[int] = [1024, 512, 256]
-        residual_mid_feature_sizes: List[int] = []
+        hidden_layers = [1024, 512, 256]
+        residual_mid_feature_sizes = []
     elif network_version == "layers_512_512_residual_0_128":
-        hidden_layers: List[int] = [512, 512]
-        residual_mid_feature_sizes: List[int] = [0, 128]
+        hidden_layers = [512, 512]
+        residual_mid_feature_sizes = [0, 128]
     elif network_version == "layers_512_256_128_residual_0_64_32":
-        hidden_layers: List[int] = [512, 256, 128]
-        residual_mid_feature_sizes: List[int] = [0, 64, 32]
+        hidden_layers = [512, 256, 128]
+        residual_mid_feature_sizes = [0, 64, 32]
     elif network_version == "layers_512_256_256_residual_0_128_128":
-        hidden_layers: List[int] = [512, 256, 256]
-        residual_mid_feature_sizes: List[int] = [0, 128, 128]
+        hidden_layers = [512, 256, 256]
+        residual_mid_feature_sizes = [0, 128, 128]
     else:
         raise NameError(
             f"Network version {network_version} not in {PREDEFINED_NETWORKS}."
@@ -146,12 +147,14 @@ def load_nets(network_version: str, in_features: int, out_features: int) -> Nets
         in_features,
         out_features,
         hidden_layers,
+        nn.ReLU(),
         residual_mid_feature_sizes=residual_mid_feature_sizes,
     )
     target_net = Net(
         in_features,
         out_features,
         hidden_layers,
+        nn.ReLU(),
         residual_mid_feature_sizes=residual_mid_feature_sizes,
     )
     return NetsTuple(policy_net, target_net)
@@ -212,8 +215,8 @@ def train(
 
     iter = 0
     start_time = time.time()
-    cur_state: Sequence[int] = make_state_one_hot(tile)
-    next_state: Sequence[int] = []
+    cur_state: Sequence[float] = make_state_one_hot(tile)
+    next_state: Sequence[float] = []
     total_rewards: List[float] = []
     total_reward: float = 0.0
 
@@ -355,7 +358,7 @@ def eval_dqn(
 
     iter = 0
     start_time = time.time()
-    cur_state: Sequence[int] = make_state_one_hot(tile)
+    cur_state: Sequence[float] = make_state_one_hot(tile)
 
     action_candidates: List[Action] = []
     inf_times = []
@@ -370,7 +373,7 @@ def eval_dqn(
 
             if event.type == pygame.KEYUP and event.key == pygame.K_r:
                 game_engine.reset()
-                prev_score: int = game_engine.score
+                prev_score = game_engine.score
 
         if not game_engine.game_is_over:
             start_inf_time = time.time()
