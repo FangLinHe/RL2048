@@ -88,6 +88,8 @@ select = [
 ignore = [
     # Line too long
     "E501",
+    # Use `super()` instead of `super(__class__, self)`
+    "UP008",
 ]
 
 [tool.ruff.lint.pydocstyle]

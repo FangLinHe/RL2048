@@ -20,12 +20,15 @@ class Residual(nn.Module):
         # 2. Input / output feature sizes are different, e.g.:
         #    x - (Linear 512x64) - (Linear 64x64) - (Linear 64x256) - sum - y
         #     \--------------------------------------------(AvgPool(2))----/
-        super()
+        super(Residual, self).__init__()
         if in_feature_size % out_feature_size != 0:
             raise ValueError(
                 f"in_feature_size ({in_feature_size}) must be divisible by "
                 f"out_feature_size ({out_feature_size})"
             )
+        self.block1: nn.Module
+        self.block2: nn.Module
+        self.block3: nn.Module
         if activation_after_bn:
             self.block1 = nn.Sequential(
                 nn.Linear(in_feature_size, mid_feature_size),
@@ -77,7 +80,7 @@ class Net(nn.Module):
         bias: bool = True,
         residual_mid_feature_sizes: Optional[List[int]] = None,
     ):
-        super()
+        super(Net, self).__init__()
         if residual_mid_feature_sizes is None:
             residual_mid_feature_sizes = []
         if len(residual_mid_feature_sizes) not in {0, len(hidden_layer_sizes)}:
@@ -91,7 +94,7 @@ class Net(nn.Module):
 
         is_residual = len(residual_mid_feature_sizes) > 0
         for i, out_features in enumerate(hidden_layer_sizes):
-            if is_residual:
+            if is_residual and residual_mid_feature_sizes[i] != 0:
                 layers.append(
                     Residual(
                         in_features,
@@ -101,11 +104,9 @@ class Net(nn.Module):
                     )
                 )
             else:
+                layers.append(nn.Linear(in_features, out_features, bias=bias))
                 layers.append(
-                    nn.Sequential(
-                        nn.Linear(in_features, out_features, bias=bias),
-                        nn.BatchNorm1d(num_features=out_features),
-                    )
+                    nn.BatchNorm1d(num_features=out_features),
                 )
 
             layers.append(activation_layer)

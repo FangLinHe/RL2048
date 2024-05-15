@@ -117,7 +117,7 @@ def write_json(move_failures, total_scores, max_grids, total_rewards, filepath: 
         "max_grids": max_grids,
         "total_rewards": total_rewards,
     }
-    tmp_file = f".{output_json}.tmp"
+    tmp_file = f"{filepath}.tmp"
     with open(tmp_file, "w") as fid:
         json.dump(output_json, fid)
         shutil.move(tmp_file, filepath)
@@ -349,7 +349,7 @@ def eval_dqn(
     out_features: int = len(Action)
     policy_net = load_nets(network_version, in_features, out_features).policy_net
 
-    policy_net.eval_dqn()
+    policy_net.eval()
     policy_net.load_state_dict(torch.load(trained_net_path))
 
     move_failure = 0
