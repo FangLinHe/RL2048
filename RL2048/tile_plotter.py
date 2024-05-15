@@ -2,8 +2,7 @@ import pygame
 import RL2048.colors as colors
 from RL2048.common import Location
 from RL2048.tile import MovingGrid, Tile
-from collections import defaultdict
-from typing import Dict, List, NamedTuple, Tuple
+from typing import List, NamedTuple, Tuple
 
 
 class PlotProperties(NamedTuple):
@@ -137,7 +136,7 @@ class TilePlotter:
 
     def clean_canvas(self):
         self.win.fill(colors.info_board_color)
-        text_surface = self.score_font.render(f"Score", True, colors.dark_foreground)
+        text_surface = self.score_font.render("Score", True, colors.dark_foreground)
         text_rect = text_surface.get_rect(center=(self.win.get_width() // 2, 20))
         self.win.blit(text_surface, text_rect)
 
@@ -245,7 +244,7 @@ class TilePlotter:
         game_over_surface.fill((255, 255, 255, 128))
         self.game_surface.blit(game_over_surface, (0, 0))
         text_surface = self.score_font.render(
-            f"Game over, press R to restart", True, colors.dark_foreground
+            "Game over, press R to restart", True, colors.dark_foreground
         )
         text_rect = text_surface.get_rect(center=game_over_rect.center)
         self.game_surface.blit(text_surface, text_rect)

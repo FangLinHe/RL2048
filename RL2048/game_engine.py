@@ -1,4 +1,3 @@
-from collections import namedtuple
 from random import randint, sample
 from RL2048.common import Location
 from RL2048.tile import MovingGrid, Tile
