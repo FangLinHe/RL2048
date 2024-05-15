@@ -10,6 +10,7 @@ class MovingGrid(NamedTuple):
     dst_loc: Location
     dst_val: int
 
+
 class Tile:
     def __init__(self, width: int = 4, height: int = 4):
         self.width: int = width

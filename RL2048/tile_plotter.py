@@ -18,7 +18,11 @@ class PlotProperties(NamedTuple):
 
 class Animation:
     def __init__(
-        self, grid: MovingGrid, src_coord: Location, dst_coord: Location, step: int = 10
+        self,
+        grid: MovingGrid,
+        src_coord: Location,
+        dst_coord: Location,
+        step: int = 10,
     ):
         self.grid = grid
         self.src_coord = src_coord
@@ -62,7 +66,10 @@ class TilePlotter:
     def window_size(self) -> Tuple[int, int]:
         game_surface_w, game_surface_h = self.game_surface_size()
 
-        return (game_surface_w, game_surface_h + self.plot_properties.info_board_height)
+        return (
+            game_surface_w,
+            game_surface_h + self.plot_properties.info_board_height,
+        )
 
     def game_surface_size(self) -> Tuple[int, int]:
         height = (
@@ -104,7 +111,10 @@ class TilePlotter:
         )
 
     def plot_grid(
-        self, grid_value: int, rect: pygame.Rect, tlwh: Tuple[int, int, int, int]
+        self,
+        grid_value: int,
+        rect: pygame.Rect,
+        tlwh: Tuple[int, int, int, int],
     ):
         colorset = (
             colors.color_palette[grid_value]
@@ -180,7 +190,8 @@ class TilePlotter:
                         else:
                             self.plot_grid(0, rect, self.grid_tlwh(x, y))
                 self.win.blit(
-                    self.game_surface, (0, self.plot_properties.info_board_height)
+                    self.game_surface,
+                    (0, self.plot_properties.info_board_height),
                 )
                 pygame.display.update()
 
@@ -208,7 +219,8 @@ class TilePlotter:
                     )
                     self.plot_grid(val, rect, tlwh)
                 self.win.blit(
-                    self.game_surface, (0, self.plot_properties.info_board_height)
+                    self.game_surface,
+                    (0, self.plot_properties.info_board_height),
                 )
                 pygame.display.update(affected_areas)
                 self.clock.tick(self.plot_properties.fps)

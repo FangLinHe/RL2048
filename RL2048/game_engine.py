@@ -16,7 +16,7 @@ class GameEngine:
         self.tile = tile
         self.score = 0
         self.game_is_over: bool = False
-        
+
     def reset(self):
         self.tile.random_start()
         self.score = 0
@@ -44,8 +44,12 @@ class GameEngine:
                         src_loc = Location(x, y)
                         dst_loc = Location(x, above)
                         val = self.tile.grids[above][x]
-                        self.tile.animation_grids[dst_loc].append(MovingGrid(dst_loc, val, dst_loc, 0)) # Disappear after merging
-                        self.tile.animation_grids[dst_loc].append(MovingGrid(src_loc, val, dst_loc, val*2)) # Twice after merging
+                        self.tile.animation_grids[dst_loc].append(
+                            MovingGrid(dst_loc, val, dst_loc, 0)
+                        )  # Disappear after merging
+                        self.tile.animation_grids[dst_loc].append(
+                            MovingGrid(src_loc, val, dst_loc, val * 2)
+                        )  # Twice after merging
 
                         self.tile.grids[above][x] *= 2
                         score += self.tile.grids[above][x]
@@ -70,12 +74,19 @@ class GameEngine:
                         # update destination location
                         assert dst_loc not in self.tile.animation_grids
                         self.tile.animation_grids[dst_loc] = [
-                            MovingGrid(grid.src_loc, grid.src_val, dst_loc, grid.dst_val) \
-                                for grid in self.tile.animation_grids[src_loc] 
+                            MovingGrid(
+                                grid.src_loc,
+                                grid.src_val,
+                                dst_loc,
+                                grid.dst_val,
+                            )
+                            for grid in self.tile.animation_grids[src_loc]
                         ]
                         del self.tile.animation_grids[src_loc]
                     else:
-                        self.tile.animation_grids[dst_loc].append(MovingGrid(src_loc, val, dst_loc, val))
+                        self.tile.animation_grids[dst_loc].append(
+                            MovingGrid(src_loc, val, dst_loc, val)
+                        )
 
                     self.tile.grids[next_y][x] = self.tile.grids[y][x]
                     self.tile.grids[y][x] = 0
@@ -108,8 +119,12 @@ class GameEngine:
                         src_loc = Location(x, y)
                         dst_loc = Location(x, below)
                         val = self.tile.grids[below][x]
-                        self.tile.animation_grids[dst_loc].append(MovingGrid(dst_loc, val, dst_loc, 0)) # Disappear after merging
-                        self.tile.animation_grids[dst_loc].append(MovingGrid(src_loc, val, dst_loc, val*2)) # Twice after merging
+                        self.tile.animation_grids[dst_loc].append(
+                            MovingGrid(dst_loc, val, dst_loc, 0)
+                        )  # Disappear after merging
+                        self.tile.animation_grids[dst_loc].append(
+                            MovingGrid(src_loc, val, dst_loc, val * 2)
+                        )  # Twice after merging
 
                         self.tile.grids[below][x] *= 2
                         score += self.tile.grids[below][x]
@@ -134,12 +149,19 @@ class GameEngine:
                         # update destination location
                         assert dst_loc not in self.tile.animation_grids
                         self.tile.animation_grids[dst_loc] = [
-                            MovingGrid(grid.src_loc, grid.src_val, dst_loc, grid.dst_val) \
-                                for grid in self.tile.animation_grids[src_loc] 
+                            MovingGrid(
+                                grid.src_loc,
+                                grid.src_val,
+                                dst_loc,
+                                grid.dst_val,
+                            )
+                            for grid in self.tile.animation_grids[src_loc]
                         ]
                         del self.tile.animation_grids[src_loc]
                     else:
-                        self.tile.animation_grids[dst_loc].append(MovingGrid(src_loc, val, dst_loc, val))
+                        self.tile.animation_grids[dst_loc].append(
+                            MovingGrid(src_loc, val, dst_loc, val)
+                        )
 
                     self.tile.grids[next_y][x] = self.tile.grids[y][x]
                     self.tile.grids[y][x] = 0
@@ -168,8 +190,12 @@ class GameEngine:
                         src_loc = Location(x, y)
                         dst_loc = Location(left, y)
                         val = self.tile.grids[y][left]
-                        self.tile.animation_grids[dst_loc].append(MovingGrid(dst_loc, val, dst_loc, 0)) # Disappear after merging
-                        self.tile.animation_grids[dst_loc].append(MovingGrid(src_loc, val, dst_loc, val*2)) # Twice after merging
+                        self.tile.animation_grids[dst_loc].append(
+                            MovingGrid(dst_loc, val, dst_loc, 0)
+                        )  # Disappear after merging
+                        self.tile.animation_grids[dst_loc].append(
+                            MovingGrid(src_loc, val, dst_loc, val * 2)
+                        )  # Twice after merging
 
                         self.tile.grids[y][left] *= 2
                         score += self.tile.grids[y][left]
@@ -196,12 +222,19 @@ class GameEngine:
                         # update destination location
                         assert dst_loc not in self.tile.animation_grids
                         self.tile.animation_grids[dst_loc] = [
-                            MovingGrid(grid.src_loc, grid.src_val, dst_loc, grid.dst_val) \
-                                for grid in self.tile.animation_grids[src_loc] 
+                            MovingGrid(
+                                grid.src_loc,
+                                grid.src_val,
+                                dst_loc,
+                                grid.dst_val,
+                            )
+                            for grid in self.tile.animation_grids[src_loc]
                         ]
                         del self.tile.animation_grids[src_loc]
                     else:
-                        self.tile.animation_grids[dst_loc].append(MovingGrid(src_loc, val, dst_loc, val))
+                        self.tile.animation_grids[dst_loc].append(
+                            MovingGrid(src_loc, val, dst_loc, val)
+                        )
 
                     self.tile.grids[y][next_x] = self.tile.grids[y][x]
                     self.tile.grids[y][x] = 0
@@ -234,8 +267,12 @@ class GameEngine:
                         src_loc = Location(x, y)
                         dst_loc = Location(right, y)
                         val = self.tile.grids[y][right]
-                        self.tile.animation_grids[dst_loc].append(MovingGrid(dst_loc, val, dst_loc, 0)) # Disappear after merging
-                        self.tile.animation_grids[dst_loc].append(MovingGrid(src_loc, val, dst_loc, val*2)) # Twice after merging
+                        self.tile.animation_grids[dst_loc].append(
+                            MovingGrid(dst_loc, val, dst_loc, 0)
+                        )  # Disappear after merging
+                        self.tile.animation_grids[dst_loc].append(
+                            MovingGrid(src_loc, val, dst_loc, val * 2)
+                        )  # Twice after merging
 
                         self.tile.grids[y][right] *= 2
                         score += self.tile.grids[y][right]
@@ -262,12 +299,19 @@ class GameEngine:
                         # update destination location
                         assert dst_loc not in self.tile.animation_grids
                         self.tile.animation_grids[dst_loc] = [
-                            MovingGrid(grid.src_loc, grid.src_val, dst_loc, grid.dst_val) \
-                                for grid in self.tile.animation_grids[src_loc] 
+                            MovingGrid(
+                                grid.src_loc,
+                                grid.src_val,
+                                dst_loc,
+                                grid.dst_val,
+                            )
+                            for grid in self.tile.animation_grids[src_loc]
                         ]
                         del self.tile.animation_grids[src_loc]
                     else:
-                        self.tile.animation_grids[dst_loc].append(MovingGrid(src_loc, val, dst_loc, val))
+                        self.tile.animation_grids[dst_loc].append(
+                            MovingGrid(src_loc, val, dst_loc, val)
+                        )
 
                     self.tile.grids[y][next_x] = self.tile.grids[y][x]
                     self.tile.grids[y][x] = 0
@@ -283,7 +327,7 @@ class GameEngine:
             for x, grid in enumerate(grid_row):
                 if grid == 0:
                     empty_grids.append(Location(x, y))
-            
+
         return empty_grids
 
     def generate_new(self) -> bool:

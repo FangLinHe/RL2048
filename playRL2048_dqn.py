@@ -43,7 +43,9 @@ def parse_args():
         prog="PlayRL2048Random", description="Play 2048 with random actions"
     )
     parser.add_argument(
-        "--show_board", action="store_true", help="Show the procedure of the game"
+        "--show_board",
+        action="store_true",
+        help="Show the procedure of the game",
     )
     parser.add_argument(
         "--print_results",

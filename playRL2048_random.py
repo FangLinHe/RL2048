@@ -15,13 +15,29 @@ from typing import List
 
 def parse_args():
     parser = argparse.ArgumentParser(
-                    prog="PlayRL2048Random",
-                    description="Play 2048 with random actions"
+        prog="PlayRL2048Random", description="Play 2048 with random actions"
     )
-    parser.add_argument("--show_board", action="store_true", help="Show the procedure of the game")
-    parser.add_argument("--print_results", action="store_true", help="Print results, like scores, failure times, etc.")
-    parser.add_argument("--output_prefix", default="Experiments/random", help="Prefix of output json file")
-    parser.add_argument("--max_iters", default=100, type=int, help="Max iterations of experiments; set it to negative value to run infinitely")
+    parser.add_argument(
+        "--show_board",
+        action="store_true",
+        help="Show the procedure of the game",
+    )
+    parser.add_argument(
+        "--print_results",
+        action="store_true",
+        help="Print results, like scores, failure times, etc.",
+    )
+    parser.add_argument(
+        "--output_prefix",
+        default="Experiments/random",
+        help="Prefix of output json file",
+    )
+    parser.add_argument(
+        "--max_iters",
+        default=100,
+        type=int,
+        help="Max iterations of experiments; set it to negative value to run infinitely",
+    )
     args = parser.parse_args()
 
     return args
@@ -100,15 +116,18 @@ def main(show_board: bool, print_results: bool, output_prefix: str, max_iters: i
                 output_json = {
                     "move_failures": move_failures,
                     "total_scores": total_scores,
-                    "max_grids": max_grids
+                    "max_grids": max_grids,
                 }
                 with open(output_json_fn, "w") as fid:
                     json.dump(output_json, fid)
                 game_engine.reset()
 
     elapsed_sec = time.time() - start_time
-    print(f"Done running {max_iters} times of experiments in {round(elapsed_sec * 1000.0)} millisecond(s).")
+    print(
+        f"Done running {max_iters} times of experiments in {round(elapsed_sec * 1000.0)} millisecond(s)."
+    )
     print(f"See results in {output_json_fn}.")
+
 
 if __name__ == "__main__":
     args = parse_args()

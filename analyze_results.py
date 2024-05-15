@@ -14,7 +14,10 @@ def parse_args():
     )
     parser.add_argument("--in_json_file", help="Json file to analyze results")
     parser.add_argument(
-        "--MA_window_size", type=int, default=500, help="Moving average window size"
+        "--MA_window_size",
+        type=int,
+        default=500,
+        help="Moving average window size",
     )
 
     return parser.parse_args()

@@ -89,7 +89,6 @@ class DQN:
         self.policy_net.train()
         return best_action
 
-
     def get_action_epsilon_greedy(self, state: Sequence[float]) -> Action:
         eps_threshold = self.training_params.eps_end + (
             self.training_params.eps_start - self.training_params.eps_end
