@@ -197,7 +197,7 @@ def train(
         save_network_steps=2000,
         print_loss_steps=500,
     )
-    reward_norm_factor: int = 32768  # reward / reward_norm_factor for value function
+    reward_norm_factor: int = 256  # reward / reward_norm_factor for value function
 
     move_failure = 0
     date_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
