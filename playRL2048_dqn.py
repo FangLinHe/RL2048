@@ -5,8 +5,8 @@ import json
 import math
 import os
 import shutil
-import tempfile
 import time
+from ctypes import ArgumentError
 from datetime import datetime
 from random import shuffle
 from typing import List, NamedTuple, Sequence
@@ -86,6 +86,11 @@ def parse_args():
     )
     args = parser.parse_args()
 
+    if args.eval and args.trained_net_path == "":
+        raise ArgumentError(
+            "`--eval` is specified, so `--trained_net_path` must be specified"
+        )
+
     return args
 
 
@@ -113,12 +118,10 @@ def write_json(move_failures, total_scores, max_grids, total_rewards, filepath: 
         "max_grids": max_grids,
         "total_rewards": total_rewards,
     }
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        tmp_file = f"{tmp_dir}/tmp.json"
-        with open(tmp_file, "w") as fid:
-            json.dump(output_json, fid)
-
-            shutil.move(tmp_file, filepath)
+    tmp_file = f".{output_json}.tmp"
+    with open(tmp_file, "w") as fid:
+        json.dump(output_json, fid)
+        shutil.move(tmp_file, filepath)
 
 
 def load_nets(network_version: str, in_features: int, out_features: int) -> NetsTuple:
@@ -321,7 +324,7 @@ def move_with_action(game_engine: GameEngine, action: Action) -> MoveResult:
     return game_engine.move_right()
 
 
-def eval(
+def eval_dqn(
     show_board: bool,
     print_results: bool,
     output_json_prefix: str,
@@ -343,7 +346,7 @@ def eval(
     out_features: int = len(Action)
     policy_net = load_nets(network_version, in_features, out_features).policy_net
 
-    policy_net.eval()
+    policy_net.eval_dqn()
     policy_net.load_state_dict(torch.load(trained_net_path))
 
     move_failure = 0
@@ -445,8 +448,7 @@ def eval(
 if __name__ == "__main__":
     args = parse_args()
     if args.eval:
-        assert args.trained_net_path is not None and args.trained_net_path != ""
-        eval(
+        eval_dqn(
             args.show_board,
             args.print_results,
             args.output_json_prefix,

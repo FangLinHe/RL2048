@@ -1,5 +1,5 @@
 from collections import defaultdict
-from random import randint, sample
+from random import SystemRandom
 from typing import Dict, List, NamedTuple
 
 from RL2048.common import Location
@@ -18,6 +18,9 @@ class Tile:
         self.height: int = height
         self.grids: List[List[int]] = []
         self.animation_grids: Dict[Location, List[MovingGrid]] = defaultdict(list)
+        self._cryptogen: SystemRandom = SystemRandom()
+        self.random_start_count: int = 2
+
         self.random_start()
 
     def random_start(self):
@@ -26,13 +29,13 @@ class Tile:
 
         def fill_grid(index):
             loc = Location(x=index % self.width, y=index // self.width)
-            val = 2 ** randint(1, 2)
+            val = 2 ** self._cryptogen.randint(1, 2)
             self.grids[loc.y][loc.x] = val
             self.animation_grids[loc].append(MovingGrid(loc, 0, loc, val))
 
-        random_count = 2
-        random_indices = sample(range(self.width * self.height), random_count)
-        assert len(set(random_indices)) == random_count
+        random_indices = self._cryptogensample(
+            range(self.width * self.height), self.random_start_count
+        )
         for index in random_indices:
             fill_grid(index)
 

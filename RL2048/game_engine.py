@@ -1,4 +1,4 @@
-from random import randint, sample
+from random import SystemRandom
 from typing import List, NamedTuple
 
 from RL2048.common import Location
@@ -15,6 +15,7 @@ class GameEngine:
         self.tile = tile
         self.score = 0
         self.game_is_over: bool = False
+        self._cryptogen: SystemRandom = SystemRandom()
 
     def reset(self):
         self.tile.random_start()
@@ -71,7 +72,6 @@ class GameEngine:
                     val = self.tile.grids[y][x]
                     if src_loc in self.tile.animation_grids:
                         # update destination location
-                        assert dst_loc not in self.tile.animation_grids
                         self.tile.animation_grids[dst_loc] = [
                             MovingGrid(
                                 grid.src_loc,
@@ -146,7 +146,6 @@ class GameEngine:
                     val = self.tile.grids[y][x]
                     if src_loc in self.tile.animation_grids:
                         # update destination location
-                        assert dst_loc not in self.tile.animation_grids
                         self.tile.animation_grids[dst_loc] = [
                             MovingGrid(
                                 grid.src_loc,
@@ -219,7 +218,6 @@ class GameEngine:
                     val = self.tile.grids[y][x]
                     if src_loc in self.tile.animation_grids:
                         # update destination location
-                        assert dst_loc not in self.tile.animation_grids
                         self.tile.animation_grids[dst_loc] = [
                             MovingGrid(
                                 grid.src_loc,
@@ -296,7 +294,6 @@ class GameEngine:
                     val = self.tile.grids[y][x]
                     if src_loc in self.tile.animation_grids:
                         # update destination location
-                        assert dst_loc not in self.tile.animation_grids
                         self.tile.animation_grids[dst_loc] = [
                             MovingGrid(
                                 grid.src_loc,
@@ -334,8 +331,8 @@ class GameEngine:
         if len(empty_grids) == 0:
             return False
 
-        des: Location = sample(empty_grids, 1)[0]
-        val: int = 2 ** randint(1, 2)
+        des: Location = self._cryptogen.sample(empty_grids, 1)[0]
+        val: int = 2 ** self._cryptogen.randint(1, 2)
         self.tile.grids[des.y][des.x] = val
         self.tile.animation_grids[des].append(MovingGrid(des, 0, des, val))
 

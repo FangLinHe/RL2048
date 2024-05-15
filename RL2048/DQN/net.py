@@ -21,7 +21,11 @@ class Residual(nn.Module):
         #    x - (Linear 512x64) - (Linear 64x64) - (Linear 64x256) - sum - y
         #     \--------------------------------------------(AvgPool(2))----/
         super()
-        assert in_feature_size % out_feature_size == 0
+        if in_feature_size % out_feature_size != 0:
+            raise ValueError(
+                f"in_feature_size ({in_feature_size}) must be divisible by "
+                f"out_feature_size ({out_feature_size})"
+            )
         if activation_after_bn:
             self.block1 = nn.Sequential(
                 nn.Linear(in_feature_size, mid_feature_size),
@@ -74,9 +78,14 @@ class Net(nn.Module):
         residual_mid_feature_sizes: Optional[List[int]] = None,
     ):
         super()
-        assert residual_mid_feature_sizes is None or len(
+        if residual_mid_feature_sizes is not None and len(
             residual_mid_feature_sizes
-        ) == len(hidden_layer_sizes)
+        ) != len(hidden_layer_sizes):
+            raise ValueError(
+                "`residual_mid_feature_sizes` should be either None or have the same "
+                f"length as `hidden_layer_sizes` ({len(hidden_layer_sizes)}), but got "
+                f"({len(residual_mid_feature_sizes)})"
+            )
         in_features = input_feature_size
         layers = []
         for i, out_features in enumerate(hidden_layer_sizes):

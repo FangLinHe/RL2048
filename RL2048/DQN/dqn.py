@@ -1,7 +1,7 @@
 import math
 import os
-import random
 import tempfile
+from random import SystemRandom
 from typing import List, NamedTuple, Sequence, Union
 
 import torch
@@ -70,12 +70,12 @@ class DQN:
                 self.training_params.gamma,
             )
         self.memory = ReplayMemory(self.training_params.memory_capacity)
-
         self.optimize_steps: int = 0
+        self.losses: List[float] = []
+
+        self._cryptogen: SystemRandom = SystemRandom()
 
         self.policy_net.train()
-
-        self.losses: List[float] = []
 
     @staticmethod
     def infer_action(policy_net: nn.Module, state: Sequence[float]) -> PolicyNetOutput:
@@ -94,10 +94,10 @@ class DQN:
             self.training_params.eps_start - self.training_params.eps_end
         ) * math.exp(-1.0 * self.optimize_steps / self.training_params.eps_decay)
 
-        if random.random() > eps_threshold:
+        if self._cryptogen.random() > eps_threshold:
             return self.get_best_action(state)
 
-        return Action(random.randrange(len(Action)))
+        return Action(self._cryptogen.randrange(len(Action)))
 
     def push_transition(self, transition: Transition):
         self.memory.push(transition)

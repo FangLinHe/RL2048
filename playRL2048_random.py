@@ -4,7 +4,7 @@ import argparse
 import json
 import time
 from datetime import datetime
-from random import choice
+from random import SystemRandom
 from typing import List
 
 import pygame
@@ -49,6 +49,7 @@ def main(show_board: bool, print_results: bool, output_prefix: str, max_iters: i
     plot_properties: PlotProperties = PlotProperties()
     plotter: TilePlotter = TilePlotter(tile, plot_properties)
     game_engine: GameEngine = GameEngine(tile)
+    cryptogen: SystemRandom = SystemRandom()
 
     keys = [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]
     move_failures: List[int] = []
@@ -70,7 +71,7 @@ def main(show_board: bool, print_results: bool, output_prefix: str, max_iters: i
             if event.type == pygame.KEYUP and event.key == pygame.K_r:
                 game_engine.reset()
 
-        key = choice(keys)
+        key = cryptogen.choice(keys)
         if not game_engine.game_is_over:
             if key == pygame.K_UP:
                 move_result = game_engine.move_up()
