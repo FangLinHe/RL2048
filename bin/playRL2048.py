@@ -9,7 +9,7 @@ from rl_2048.tile_plotter import PlotProperties, TilePlotter
 
 def main():
     tile = Tile(width=4, height=4)
-    plot_properties = PlotProperties()
+    plot_properties = PlotProperties(fps=120, delay_after_plot=0)
     plotter = TilePlotter(tile, plot_properties)
     game_engine = GameEngine(tile)
     plotter.plot(game_engine.score)

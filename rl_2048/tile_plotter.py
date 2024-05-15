@@ -15,6 +15,7 @@ class PlotProperties(NamedTuple):
     border_radius: int = 3
     animation_steps: int = 8
     fps: int = 60
+    delay_after_plot: int = 0
 
 
 class Animation:
@@ -232,7 +233,7 @@ class TilePlotter:
         self.win.blit(self.game_surface, (0, self.plot_properties.info_board_height))
         self.plot_score(score)
         pygame.display.update()
-        pygame.time.delay(50)
+        pygame.time.delay(self.plot_properties.delay_after_plot)
 
     def plot_game_over(self):
         game_over_rect = pygame.Rect(

@@ -30,6 +30,13 @@ keywords = [
 [project.urls]
 homepage = "https://github.com/FangLinHe/RL2048"
 
+[project.gui-scripts]
+rl2048-play-gui = "rl_2048.bin.playRL2048:main"
+rl2048-dqn-gui = "rl_2048.bin.playRL2048_dqn:main"
+rl2048-dqn-eval-gui = "rl_2048.bin.playRL2048_dqn_eval:main"
+rl2048-random-gui = "rl_2048.bin.playRL2048_random:main"
+rl2048-analyze-results-gui = "rl_2048.bin.analyze_results:main"
+
 [tool.hatch.metadata]
 allow-direct-references = true
 
@@ -40,8 +47,27 @@ path = "rl_2048/__init__.py"
 exclude = [
     "/.github",
     "./gitignore",
-    "/.pre-commit-config.yaml"
+    "/.pre-commit-config.yaml",
+    "Experiments",
+    "TrainedNetworks",
+    "Videos",
 ]
+
+[tool.hatch.build.targets.sdist.force-include]
+"bin/playRL2048.py" = "rl_2048/bin/playRL2048.py"
+"bin/playRL2048_dqn.py" = "rl_2048/bin/playRL2048_dqn.py"
+"bin/playRL2048_dqn_eval.py" = "rl_2048/bin/playRL2048_dqn_eval.py"
+"bin/playRL2048_random.py" = "rl_2048/bin/playRL2048_random.py"
+"bin/analyze_results.py" = "rl_2048/bin/analyze_results.py"
+"pretrained_model/model_E.pth" = "rl_2048/pretrained_model/model_E.pth"
+
+[tool.hatch.build.targets.wheel.force-include]
+"bin/playRL2048.py" = "rl_2048/bin/playRL2048.py"
+"bin/playRL2048_dqn.py" = "rl_2048/bin/playRL2048_dqn.py"
+"bin/playRL2048_dqn_eval.py" = "rl_2048/bin/playRL2048_dqn_eval.py"
+"bin/playRL2048_random.py" = "rl_2048/bin/playRL2048_random.py"
+"bin/analyze_results.py" = "rl_2048/bin/analyze_results.py"
+"pretrained_model/model_E.pth" = "rl_2048/pretrained_model/model_E.pth"
 
 [tool.hatch.envs.test]
 dependencies = ["ruff>=0.3.0", "pytest>=7.2.0", "pytest-cov>=4.0.0"]

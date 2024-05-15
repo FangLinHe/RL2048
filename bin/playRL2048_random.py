@@ -46,7 +46,7 @@ def parse_args():
 
 def main(show_board: bool, print_results: bool, output_prefix: str, max_iters: int):
     tile: Tile = Tile(width=4, height=4)
-    plot_properties: PlotProperties = PlotProperties()
+    plot_properties: PlotProperties = PlotProperties(fps=60, delay_after_plot=50)
     plotter: TilePlotter = TilePlotter(tile, plot_properties)
     game_engine: GameEngine = GameEngine(tile)
     cryptogen: SystemRandom = SystemRandom()

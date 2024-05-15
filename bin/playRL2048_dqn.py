@@ -170,7 +170,7 @@ def train(
     pre_trained_net_path: str = "",
 ):
     tile: Tile = Tile(width=4, height=4)
-    plot_properties: PlotProperties = PlotProperties()
+    plot_properties: PlotProperties = PlotProperties(fps=60, delay_after_plot=50)
     plotter: TilePlotter = TilePlotter(tile, plot_properties)
     game_engine: GameEngine = GameEngine(tile)
 
@@ -336,7 +336,7 @@ def eval_dqn(
     network_version: str,
 ):
     tile: Tile = Tile(width=4, height=4)
-    plot_properties: PlotProperties = PlotProperties()
+    plot_properties: PlotProperties = PlotProperties(fps=60, delay_after_plot=50)
     plotter: TilePlotter = TilePlotter(tile, plot_properties)
     game_engine: GameEngine = GameEngine(tile)
 
@@ -365,7 +365,7 @@ def eval_dqn(
 
     prev_score: int = game_engine.score
     score_not_increasing_count: int = 0
-    while iter < max_iters:
+    while max_iters < 0 or iter < max_iters:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -448,7 +448,7 @@ def eval_dqn(
     print(f"See results in {output_json_fn}.")
 
 
-if __name__ == "__main__":
+def main():
     args = parse_args()
     if args.eval:
         eval_dqn(
@@ -469,3 +469,7 @@ if __name__ == "__main__":
             args.network_version,
             args.trained_net_path,
         )
+
+
+if __name__ == "__main__":
+    main()
