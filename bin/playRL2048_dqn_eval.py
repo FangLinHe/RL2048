@@ -29,7 +29,6 @@ def main():
             model_path,
         ]
     )
-    breakpoint()
     dqn_main()
 
 
