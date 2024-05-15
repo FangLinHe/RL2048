@@ -1,0 +1,94 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "rl-2048"
+description = "Play 2048 game manually or with reinforcement learning."
+readme = "README.md"
+license = "MIT"
+dynamic = ["version"]
+requires-python = ">= 3.8"
+dependencies = ["pygame>=2.5.2", "torch>=2.3.0"]
+authors = [{ name = "Fang-Lin He", email = "fanglin.he.ms@gmail.com" }]
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+]
+keywords = [
+    "RL",
+    "reinforcement learning",
+    "DQN",
+    "deep Q-learning",
+    "game",
+    "2048",
+]
+
+[project.urls]
+homepage = "https://github.com/FangLinHe/RL2048"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.version]
+path = "rl_2048/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/.github",
+    "./gitignore",
+    "/.pre-commit-config.yaml"
+]
+
+[tool.hatch.envs.test]
+dependencies = ["ruff>=0.3.0", "pytest>=7.2.0", "pytest-cov>=4.0.0"]
+
+[tool.hatch.envs.test.scripts]
+lint = 'ruff check .'
+isort = 'ruff check --select I'
+# test = 'pytest -v --doctest-modules --cov=./rl_2048 --cov-report=xml rl_2048'
+
+[tool.black]
+line-length = 88
+target-version = ["py38"]
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+| Experiments
+| TrainedNetworks
+| Videos
+)/
+'''
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+    # pycodestyle warnings
+    "W",
+    # flake8-quotes
+    "Q",
+]
+ignore = [
+    # Line too long
+    "E501",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"

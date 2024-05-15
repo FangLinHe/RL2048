@@ -2,7 +2,7 @@ from collections import defaultdict
 from random import SystemRandom
 from typing import Dict, List, NamedTuple
 
-from RL2048.common import Location
+from rl_2048.common import Location
 
 
 class MovingGrid(NamedTuple):

@@ -2,9 +2,9 @@
 
 import pygame
 
-from RL2048.game_engine import GameEngine
-from RL2048.tile import Tile
-from RL2048.tile_plotter import PlotProperties, TilePlotter
+from rl_2048.game_engine import GameEngine
+from rl_2048.tile import Tile
+from rl_2048.tile_plotter import PlotProperties, TilePlotter
 
 
 def main():

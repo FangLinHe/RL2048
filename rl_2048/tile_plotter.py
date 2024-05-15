@@ -2,9 +2,9 @@ from typing import List, NamedTuple, Tuple
 
 import pygame
 
-import RL2048.colors as colors
-from RL2048.common import Location
-from RL2048.tile import MovingGrid, Tile
+import rl_2048.colors as colors
+from rl_2048.common import Location
+from rl_2048.tile import MovingGrid, Tile
 
 
 class PlotProperties(NamedTuple):

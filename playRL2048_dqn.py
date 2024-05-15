@@ -14,12 +14,12 @@ import pygame
 import torch
 from torch import nn
 
-from RL2048.DQN.dqn import DQN, TrainingParameters
-from RL2048.DQN.net import Net
-from RL2048.DQN.replay_memory import Action, Transition
-from RL2048.game_engine import GameEngine, MoveResult
-from RL2048.tile import Tile
-from RL2048.tile_plotter import PlotProperties, TilePlotter
+from rl_2048.DQN.dqn import DQN, TrainingParameters
+from rl_2048.DQN.net import Net
+from rl_2048.DQN.replay_memory import Action, Transition
+from rl_2048.game_engine import GameEngine, MoveResult
+from rl_2048.tile import Tile
+from rl_2048.tile_plotter import PlotProperties, TilePlotter
 
 
 class NetsTuple(NamedTuple):
