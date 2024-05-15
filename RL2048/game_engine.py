@@ -1,8 +1,8 @@
 from random import randint, sample
+from typing import List, NamedTuple
+
 from RL2048.common import Location
 from RL2048.tile import MovingGrid, Tile
-
-from typing import List, NamedTuple
 
 
 class MoveResult(NamedTuple):

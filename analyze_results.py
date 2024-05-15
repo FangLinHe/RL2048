@@ -1,10 +1,10 @@
-from collections import Counter
-import math
-import json
-import numpy as np
 import argparse
-import matplotlib.pyplot as plt
+import json
+import math
+from collections import Counter
 from typing import List
+
+import matplotlib.pyplot as plt
 
 
 def parse_args():
@@ -33,7 +33,7 @@ def moving_avg(values: List[float], window_size: int) -> List[float]:
 
 def plot_max_grids_statistics(max_grids: List[float]):
     counter = Counter(max_grids)
-    log2_keys = [int(math.log2(k)) for k in counter.keys()]
+    log2_keys = [int(math.log2(k)) for k in counter]
     barchart = plt.bar(log2_keys, counter.values())
     plt.title("max_grids statistics (%)")
     ax = plt.gca()
@@ -57,7 +57,7 @@ def plot_max_grids_statistics(max_grids: List[float]):
 
 
 def main(in_file_json: str, window_size: int):
-    with open(in_file_json, "rt") as fid:
+    with open(in_file_json) as fid:
         data = json.load(fid)
 
     for k, v in data.items():

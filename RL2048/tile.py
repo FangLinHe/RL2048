@@ -1,7 +1,8 @@
-from RL2048.common import Location
 from collections import defaultdict
 from random import randint, sample
 from typing import Dict, List, NamedTuple
+
+from RL2048.common import Location
 
 
 class MovingGrid(NamedTuple):

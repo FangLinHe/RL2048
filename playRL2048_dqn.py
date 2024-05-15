@@ -2,27 +2,25 @@
 
 import argparse
 import json
-import pygame
+import math
+import os
 import shutil
 import tempfile
 import time
-import math
-import os
-
 from datetime import datetime
 from random import shuffle
-from RL2048.game_engine import GameEngine, MoveResult
-from RL2048.tile import Tile
-from RL2048.tile_plotter import TilePlotter, PlotProperties
-from RL2048.DQN.dqn import TrainingParameters, DQN
-from RL2048.DQN.net import Net
-from RL2048.DQN.replay_memory import Action, Transition
 from typing import List, NamedTuple, Sequence
 
+import pygame
 import torch
 from torch import nn
 
-from RL2048.DQN.dqn import DQN
+from RL2048.DQN.dqn import DQN, TrainingParameters
+from RL2048.DQN.net import Net
+from RL2048.DQN.replay_memory import Action, Transition
+from RL2048.game_engine import GameEngine, MoveResult
+from RL2048.tile import Tile
+from RL2048.tile_plotter import PlotProperties, TilePlotter
 
 
 class NetsTuple(NamedTuple):
@@ -117,7 +115,7 @@ def write_json(move_failures, total_scores, max_grids, total_rewards, filepath: 
     }
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_file = f"{tmp_dir}/tmp.json"
-        with open(tmp_file, "wt") as fid:
+        with open(tmp_file, "w") as fid:
             json.dump(output_json, fid)
 
             shutil.move(tmp_file, filepath)

@@ -2,15 +2,16 @@
 
 import argparse
 import json
-import pygame
 import time
-
 from datetime import datetime
 from random import choice
+from typing import List
+
+import pygame
+
 from RL2048.game_engine import GameEngine
 from RL2048.tile import Tile
-from RL2048.tile_plotter import TilePlotter, PlotProperties
-from typing import List
+from RL2048.tile_plotter import PlotProperties, TilePlotter
 
 
 def parse_args():

@@ -1,8 +1,10 @@
+from typing import List, NamedTuple, Tuple
+
 import pygame
+
 import RL2048.colors as colors
 from RL2048.common import Location
 from RL2048.tile import MovingGrid, Tile
-from typing import List, NamedTuple, Tuple
 
 
 class PlotProperties(NamedTuple):
@@ -50,7 +52,7 @@ class TilePlotter:
         pygame.init()
         self.clock = pygame.time.Clock()
 
-        self.win = pygame.display.set_mode((self.window_size()))
+        self.win = pygame.display.set_mode(self.window_size())
         self.game_surface = pygame.surface.Surface(self.game_surface_size())
         self.rects: List[List[pygame.Rect]] = [
             [pygame.Rect(*self.grid_tlwh(x, y)) for x in range(self.tile.width)]
@@ -115,11 +117,7 @@ class TilePlotter:
         rect: pygame.Rect,
         tlwh: Tuple[int, int, int, int],
     ):
-        colorset = (
-            colors.color_palette[grid_value]
-            if grid_value in colors.color_palette
-            else colors.default_colorset
-        )
+        colorset = colors.color_palette.get(grid_value, colors.default_colorset)
         pygame.draw.rect(
             self.game_surface,
             tuple(colorset.background),

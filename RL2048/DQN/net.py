@@ -20,7 +20,7 @@ class Residual(nn.Module):
         # 2. Input / output feature sizes are different, e.g.:
         #    x - (Linear 512x64) - (Linear 64x64) - (Linear 64x256) - sum - y
         #     \--------------------------------------------(AvgPool(2))----/
-        super(Residual, self).__init__()
+        super()
         assert in_feature_size % out_feature_size == 0
         if activation_after_bn:
             self.block1 = nn.Sequential(
@@ -71,20 +71,17 @@ class Net(nn.Module):
         hidden_layer_sizes: List[int],
         bias: bool = True,
         activation_layer: Optional[nn.Module] = nn.ReLU,
-        residual_mid_feature_sizes: List[int] = [],
+        residual_mid_feature_sizes: Optional[List[int]] = None,
     ):
-        super(Net, self).__init__()
-        assert len(residual_mid_feature_sizes) == 0 or len(
+        super()
+        assert residual_mid_feature_sizes is None or len(
             residual_mid_feature_sizes
         ) == len(hidden_layer_sizes)
         in_features = input_feature_size
         layers = []
         for i, out_features in enumerate(hidden_layer_sizes):
             is_residual = False
-            if (
-                len(residual_mid_feature_sizes) == 0
-                or residual_mid_feature_sizes[i] == 0
-            ):
+            if residual_mid_feature_sizes is None:
                 layers.append(nn.Linear(in_features, out_features, bias=bias))
             else:
                 layers.append(

@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 import pygame
+
 from RL2048.game_engine import GameEngine
 from RL2048.tile import Tile
-from RL2048.tile_plotter import TilePlotter, PlotProperties
+from RL2048.tile_plotter import PlotProperties, TilePlotter
 
 
 def main():

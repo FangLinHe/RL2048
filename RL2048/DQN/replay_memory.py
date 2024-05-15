@@ -1,8 +1,8 @@
 import random
-
 from collections import deque
 from enum import Enum
 from typing import Deque, NamedTuple, Sequence
+
 import torch
 
 

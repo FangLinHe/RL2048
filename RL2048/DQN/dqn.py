@@ -1,12 +1,14 @@
+import math
 import os
 import random
-import torch
-import math
+import tempfile
+from typing import List, NamedTuple, Sequence, Union
 
-from typing import NamedTuple, List, Sequence, Union
+import torch
+from torch import Tensor, nn, optim
+
 from .net import Net
 from .replay_memory import Action, Batch, ReplayMemory, Transition
-from torch import Tensor, nn, optim
 
 
 class TrainingParameters(NamedTuple):
@@ -43,7 +45,7 @@ class DQN:
         policy_net: Net,
         target_net: Net,
         output_net_dir: str,
-        training_params: TrainingParameters = TrainingParameters(),
+        training_params: TrainingParameters,
     ):
         self.policy_net: Net = policy_net
         self.target_net: Net = target_net
@@ -189,7 +191,8 @@ if __name__ == "__main__":
         game_over=False,
     )
 
-    dqn = DQN(policy_net, target_net, training_params)
+    with tempfile.TemporaryDirectory as tmp_dir:
+        dqn = DQN(policy_net, target_net, tmp_dir, training_params)
 
     dqn.push_transition(t1)
     dqn.push_transition(t2)
