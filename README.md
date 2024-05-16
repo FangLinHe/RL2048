@@ -63,16 +63,20 @@ We used epsilon-greedy algorithm during training to trade-off exploration and ex
 # Build package
 make build
 
+# Run tests and show test coverage
+make test
+
 # Check formats
-make lints
+make lint
 
 # Check if imports are sorted
-make isorts
+make isort
 ```
 
 ## TODO
 
-- [ ] Write tests
-- [ ] Run coverage
+- [ ] Write tests and run coverage
+  * Just got started!
 - [ ] Write GitHub workflows
-- [ ] Make sure scripts can be executed with only library installed
+- [x] <del>Make sure scripts can be executed with only library installed</del> (Tested on Windows!)
+- [ ] Make a report

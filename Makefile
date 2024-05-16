@@ -1,18 +1,21 @@
+.PHONY: all
 .PHONY: build
-.PHONY: tag
 .PHONY: tests
 .PHONY: lints
 .PHONY: isorts
+.PHONY: tag
 
 PKG_VERSION=`hatch version`
 
 # Equivalent to python -m build --sdist --wheel --outdir dist/ .
-build:
+all:
+	hatch run test:isort
+	hatch run test:lint
+	hatch run test:test
 	hatch build
 
-tag:
-	git tag -a v${PKG_VERSION} -m v${PKG_VERSION}
-	git push --tag
+build:
+	hatch build
 
 test:
 	hatch run test:test
@@ -22,3 +25,7 @@ lint:
 
 isort:
 	hatch run test:isort
+
+tag:
+	git tag -a v${PKG_VERSION} -m v${PKG_VERSION}
+	git push --tag

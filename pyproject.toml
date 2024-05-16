@@ -73,8 +73,8 @@ exclude = [
 dependencies = ["ruff>=0.3.0", "pytest>=7.2.0", "pytest-cov>=4.0.0"]
 
 [tool.hatch.envs.test.scripts]
-lint = "ruff check ."
-isort = "ruff check --select I"
+lint = "ruff check . --fix"
+isort = "ruff check --select I --fix"
 test = '''
 pytest -v --doctest-modules \
   --cov=./rl_2048 \
