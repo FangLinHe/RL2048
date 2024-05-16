@@ -73,9 +73,16 @@ exclude = [
 dependencies = ["ruff>=0.3.0", "pytest>=7.2.0", "pytest-cov>=4.0.0"]
 
 [tool.hatch.envs.test.scripts]
-lint = 'ruff check .'
-isort = 'ruff check --select I'
-# test = 'pytest -v --doctest-modules --cov=./rl_2048 --cov-report=xml rl_2048'
+lint = "ruff check ."
+isort = "ruff check --select I"
+test = '''
+pytest -v --doctest-modules \
+  --cov=./rl_2048 \
+  --cov-report html \
+  --cov-report term-missing \
+  tests \
+&& echo "It also generates .coverage file, which can be read using \`coverage report\`."
+'''
 
 [tool.black]
 line-length = 88

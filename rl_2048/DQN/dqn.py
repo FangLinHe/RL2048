@@ -7,8 +7,8 @@ from typing import List, NamedTuple, Sequence, Union
 import torch
 from torch import Tensor, nn, optim
 
-from .net import Net
-from .replay_memory import Action, Batch, ReplayMemory, Transition
+from rl_2048.DQN.net import Net
+from rl_2048.DQN.replay_memory import Action, Batch, ReplayMemory, Transition
 
 
 class TrainingParameters(NamedTuple):
