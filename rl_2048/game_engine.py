@@ -33,7 +33,6 @@ class GameEngine:
         else:  # action == Action.RIGHT
             return self.move_right()
 
-
     def move_up(self) -> MoveResult:
         suc: bool = False
         score: int = 0

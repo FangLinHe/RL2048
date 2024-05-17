@@ -6,6 +6,7 @@
 .PHONY: lint
 .PHONY: isort
 .PHONY: mypy
+.PHONY: bandit
 .PHONY: tag
 
 PKG_VERSION=`hatch version`
@@ -40,6 +41,12 @@ isort:
 mypy:
 	mypy rl_2048 tests --check-untyped-defs
 
+bandit:
+	bandit -c pyproject.toml -r .
+
 tag:
 	git tag -a v${PKG_VERSION} -m v${PKG_VERSION}
 	git push --tag
+
+pre-commit:
+	pre-commit run --all-files

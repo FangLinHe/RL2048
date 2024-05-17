@@ -26,10 +26,14 @@ class Tile:
 
     def set_grids(self, grids: List[List[int]]):
         if len(grids) != self.height:
-            raise ValueError(f"Wrong grids height, expected {self.height}, actual {len(grids)}")
+            raise ValueError(
+                f"Wrong grids height, expected {self.height}, actual {len(grids)}"
+            )
         for row in grids:
             if len(row) != self.width:
-                raise ValueError(f"Wrong grids width, expected {self.width}, actual {len(row)}")
+                raise ValueError(
+                    f"Wrong grids width, expected {self.width}, actual {len(row)}"
+                )
 
         self.grids = deepcopy(grids)
 

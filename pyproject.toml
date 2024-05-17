@@ -74,18 +74,6 @@ pytest -v --doctest-modules \
 && echo "It also generates .coverage file, which can be read using \`coverage report\`."
 '''
 
-[tool.black]
-line-length = 88
-target-version = ["py38"]
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-| Experiments
-| TrainedNetworks
-| Videos
-)/
-'''
-
 [tool.ruff]
 line-length = 88
 
@@ -117,3 +105,6 @@ ignore = [
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.bandit.assert_used]
+skips = ['*/*_test.py', '*/test_*.py']

@@ -386,9 +386,6 @@ def eval_dqn(
                 score_not_increasing_count = 0
             prev_score = game_engine.score
 
-            if score_not_increasing_count > 10:
-                breakpoint()
-
             cur_state = make_state_one_hot(tile)
 
             if show_board:

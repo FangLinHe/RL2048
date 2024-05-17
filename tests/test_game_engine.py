@@ -37,32 +37,38 @@ def rot_fixture_90_deg(fixture: GridsActionFixture) -> GridsActionFixture:
     action: Action = ACTION_ROTATION_MAP[fixture.action]
     return GridsActionFixture(grids, action, fixture.expected_move_result)
 
+
 @pytest.fixture
 def move_up_fixtures() -> List[GridsActionFixture]:
     fixtures: List[GridsActionFixture] = []
     # Move up failure case
-    fixtures.append(GridsActionFixture(
-        grids = [
-            [0, 0, 2, 4],
-            [0, 0, 0, 0],
-            [0, 0, 0, 0],
-            [0, 0, 0, 0],
-        ],
-        action = Action.UP,
-        expected_move_result = MoveResult(suc=False, score=0)
-    ))
+    fixtures.append(
+        GridsActionFixture(
+            grids=[
+                [0, 0, 2, 4],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+            ],
+            action=Action.UP,
+            expected_move_result=MoveResult(suc=False, score=0),
+        )
+    )
     # Move up successful case
-    fixtures.append(GridsActionFixture(
-        grids = [
-        [0, 0, 0, 4],
-        [0, 0, 0, 4],
-        [0, 0, 0, 0],
-        [0, 0, 0, 0],
-        ],
-        action = Action.UP,
-        expected_move_result = MoveResult(suc=True, score=8)
-    ))
+    fixtures.append(
+        GridsActionFixture(
+            grids=[
+                [0, 0, 0, 4],
+                [0, 0, 0, 4],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+            ],
+            action=Action.UP,
+            expected_move_result=MoveResult(suc=True, score=8),
+        )
+    )
     return fixtures
+
 
 def test_game_engine_init():
     tile = Tile(width=4, height=4)
@@ -70,6 +76,7 @@ def test_game_engine_init():
 
     assert game_engine.score == 0
     assert not game_engine.game_is_over
+
 
 def test_game_engine_move(move_up_fixtures: List[GridsActionFixture]):
     tile = Tile(width=4, height=4)
