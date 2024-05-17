@@ -9,7 +9,14 @@ readme = "README.md"
 license = "MIT"
 dynamic = ["version"]
 requires-python = ">= 3.8"
-dependencies = ["pygame>=2.5.2", "torch>=2.3.0", "matplotlib>=3.8.4"]
+dependencies = [
+    "pygame>=2.5.2",
+    "torch>=2.3.0",
+    "matplotlib>=3.8.4",
+    "jax>=0.4.16",
+    "jaxlib>=0.4.16",
+    "flax>=0.8.3"
+]
 authors = [{ name = "Fang-Lin He", email = "fanglin.he.ms@gmail.com" }]
 classifiers = [
     "Development Status :: 1 - Planning",

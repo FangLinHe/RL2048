@@ -61,7 +61,7 @@ class ReplayMemory:
 
     def sample(self, batch_size: int) -> Batch:
         random_indices = random.sample(list(range(len(self))), batch_size)
-        return Batch(
+        batch = Batch(
             torch.tensor([self.states[i] for i in random_indices]),
             torch.tensor(
                 [self.actions[i] for i in random_indices], dtype=torch.int64
@@ -72,6 +72,7 @@ class ReplayMemory:
                 [self.games_over[i] for i in random_indices], dtype=torch.bool
             ).view((-1, 1)),
         )
+        return batch
 
     def __len__(self):
         return len(self.states)
