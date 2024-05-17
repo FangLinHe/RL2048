@@ -67,7 +67,6 @@ lint = "ruff check . --fix"
 isort = "ruff check --select I --fix"
 test = '''
 pytest -v --doctest-modules \
-  --ignore=./rl_2048/bin
   --cov=./rl_2048 \
   --cov-report html \
   --cov-report term-missing \

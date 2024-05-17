@@ -1,0 +1,2 @@
+[run]
+omit = rl_2048/bin/*
