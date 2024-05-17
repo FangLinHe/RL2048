@@ -30,7 +30,7 @@ class Tile:
         for row in grids:
             if len(row) != self.width:
                 raise ValueError(f"Wrong grids width, expected {self.width}, actual {len(row)}")
-        
+
         self.grids = deepcopy(grids)
 
     def random_start(self):

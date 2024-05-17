@@ -54,19 +54,9 @@ exclude = [
 ]
 
 [tool.hatch.build.targets.sdist.force-include]
-"bin/playRL2048.py" = "rl_2048/bin/playRL2048.py"
-"bin/playRL2048_dqn.py" = "rl_2048/bin/playRL2048_dqn.py"
-"bin/playRL2048_dqn_eval.py" = "rl_2048/bin/playRL2048_dqn_eval.py"
-"bin/playRL2048_random.py" = "rl_2048/bin/playRL2048_random.py"
-"bin/analyze_results.py" = "rl_2048/bin/analyze_results.py"
 "pretrained_model/model_E.pth" = "rl_2048/pretrained_model/model_E.pth"
 
 [tool.hatch.build.targets.wheel.force-include]
-"bin/playRL2048.py" = "rl_2048/bin/playRL2048.py"
-"bin/playRL2048_dqn.py" = "rl_2048/bin/playRL2048_dqn.py"
-"bin/playRL2048_dqn_eval.py" = "rl_2048/bin/playRL2048_dqn_eval.py"
-"bin/playRL2048_random.py" = "rl_2048/bin/playRL2048_random.py"
-"bin/analyze_results.py" = "rl_2048/bin/analyze_results.py"
 "pretrained_model/model_E.pth" = "rl_2048/pretrained_model/model_E.pth"
 
 [tool.hatch.envs.test]
@@ -77,6 +67,7 @@ lint = "ruff check . --fix"
 isort = "ruff check --select I --fix"
 test = '''
 pytest -v --doctest-modules \
+  --ignore=./rl_2048/bin
   --cov=./rl_2048 \
   --cov-report html \
   --cov-report term-missing \

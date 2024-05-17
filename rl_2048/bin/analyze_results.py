@@ -34,7 +34,7 @@ def moving_avg(values: List[float], window_size: int) -> List[float]:
 def plot_max_grids_statistics(max_grids: List[float]):
     counter = Counter(max_grids)
     log2_keys = [int(math.log2(k)) for k in counter]
-    barchart = plt.bar(log2_keys, counter.values())
+    barchart = plt.bar(log2_keys, list(counter.values()))
     plt.title("max_grids statistics (%)")
     ax = plt.gca()
     ax.set_xticks(log2_keys, (f"{2 ** k}" for k in log2_keys))

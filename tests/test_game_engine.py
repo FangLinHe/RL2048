@@ -6,8 +6,6 @@ from rl_2048.DQN.replay_memory import Action
 from rl_2048.game_engine import GameEngine, MoveResult
 from rl_2048.tile import Tile
 
-from copy import deepcopy
-
 
 class GridsActionFixture(NamedTuple):
     grids: List[List[int]]
