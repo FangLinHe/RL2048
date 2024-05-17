@@ -233,14 +233,8 @@ def train(
         if not game_engine.game_is_over:
             action: Action = dqn.get_action_epsilon_greedy(cur_state)
             reward: float = 0.0
-            if action == Action.UP:
-                move_result = game_engine.move_up()
-            elif action == Action.DOWN:
-                move_result = game_engine.move_down()
-            elif action == Action.LEFT:
-                move_result = game_engine.move_left()
-            else:  # action == Action.RIGHT
-                move_result = game_engine.move_right()
+
+            move_result = game_engine.move(action)
 
             if move_result.suc:
                 game_engine.generate_new()
@@ -315,18 +309,6 @@ def train(
     print(f"See results in {output_json_fn}.")
 
 
-def move_with_action(game_engine: GameEngine, action: Action) -> MoveResult:
-    if action == Action.UP:
-        return game_engine.move_up()
-    elif action == Action.DOWN:
-        return game_engine.move_down()
-    elif action == Action.LEFT:
-        return game_engine.move_left()
-
-    # action == Action.RIGHT
-    return game_engine.move_right()
-
-
 def eval_dqn(
     show_board: bool,
     print_results: bool,
@@ -381,7 +363,7 @@ def eval_dqn(
             inf_times.append(time.time() - start_inf_time)
             action: Action = policy_net_output.action
 
-            move_result: MoveResult = move_with_action(game_engine, action)
+            move_result: MoveResult = game_engine.move(action)
             if move_result.suc:
                 game_engine.generate_new()
             else:
@@ -391,7 +373,7 @@ def eval_dqn(
                 ]
                 shuffle(action_candidates)
                 for action in action_candidates:
-                    move_result = move_with_action(game_engine, action)
+                    move_result = game_engine.move(action)
                     if move_result.suc:
                         break
                     move_failure += 1

@@ -2,6 +2,7 @@ from random import SystemRandom
 from typing import List, NamedTuple
 
 from rl_2048.common import Location
+from rl_2048.DQN.replay_memory import Action
 from rl_2048.tile import MovingGrid, Tile
 
 
@@ -12,15 +13,26 @@ class MoveResult(NamedTuple):
 
 class GameEngine:
     def __init__(self, tile: Tile):
-        self.tile = tile
-        self.score = 0
+        self.tile: Tile = tile
+        self.score: int = 0
         self.game_is_over: bool = False
-        self._cryptogen: SystemRandom = SystemRandom()
+        self._cryptogen = SystemRandom()
 
     def reset(self):
         self.tile.random_start()
         self.score = 0
         self.game_is_over = False
+
+    def move(self, action: Action) -> MoveResult:
+        if action == Action.UP:
+            return self.move_up()
+        elif action == Action.DOWN:
+            return self.move_down()
+        elif action == Action.LEFT:
+            return self.move_left()
+        else:  # action == Action.RIGHT
+            return self.move_right()
+
 
     def move_up(self) -> MoveResult:
         suc: bool = False
@@ -317,7 +329,7 @@ class GameEngine:
         self.score += score
         return MoveResult(suc, score)
 
-    def find_empty_grids(self) -> List[Location]:
+    def _find_empty_grids(self) -> List[Location]:
         empty_grids: List[Location] = []
         for y, grid_row in enumerate(self.tile.grids):
             for x, grid in enumerate(grid_row):
@@ -327,7 +339,7 @@ class GameEngine:
         return empty_grids
 
     def generate_new(self) -> bool:
-        empty_grids: List[Location] = self.find_empty_grids()
+        empty_grids: List[Location] = self._find_empty_grids()
         if len(empty_grids) == 0:
             return False
 

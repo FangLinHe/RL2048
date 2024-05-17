@@ -1,4 +1,5 @@
 from collections import defaultdict
+from copy import deepcopy
 from random import SystemRandom
 from typing import Dict, List, NamedTuple
 
@@ -22,6 +23,15 @@ class Tile:
         self.random_start_count: int = 2
 
         self.random_start()
+
+    def set_grids(self, grids: List[List[int]]):
+        if len(grids) != self.height:
+            raise ValueError(f"Wrong grids height, expected {self.height}, actual {len(grids)}")
+        for row in grids:
+            if len(row) != self.width:
+                raise ValueError(f"Wrong grids width, expected {self.width}, actual {len(row)}")
+        
+        self.grids = deepcopy(grids)
 
     def random_start(self):
         self.grids = [[0 for _x in range(self.width)] for _y in range(self.height)]
