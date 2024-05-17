@@ -1,3 +1,5 @@
+[![ci](https://github.com/FangLinHe/RL2048/actions/workflows/ci.yaml/badge.svg)](https://github.com/FangLinHe/RL2048/actions/workflows/ci.yaml)
+
 # RL2048
 
 This project aims to implement a Python version of [2048 game](https://play2048.co/) and train an RL model to play the game.
