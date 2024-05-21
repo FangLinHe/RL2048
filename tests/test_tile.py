@@ -17,3 +17,25 @@ def test_tile():
         tile.reset_animation_grids()
         assert len(tile.animation_grids) == 0
         tile.random_start()
+
+
+def test_tile_flattened():
+    tile = Tile(width=5, height=3)
+    # fmt: off
+    tile.grids = [
+        [0, 0, 2, 4, 0],
+        [4, 8, 0, 2, 0],
+        [0, 0, 2, 0, 2]
+    ]
+    # fmt: on
+    flattened: List[int] = tile.flattened()
+    # fmt: off
+    expected: List[int] = [
+        0, 0, 2, 4, 0,
+        4, 8, 0, 2, 0,
+        0, 0, 2, 0, 2
+    ]
+    # fmt: on
+    assert len(flattened) == len(expected) and all(
+        a == b for a, b in zip(flattened, expected)
+    )

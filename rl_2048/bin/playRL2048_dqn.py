@@ -193,15 +193,15 @@ def train(
         memory_capacity=20000,
         gamma=0.99,
         batch_size=128,
-        lr=1e-5,
-        lr_decay_milestones=[15000, 30000, 50000, 70000],
+        lr=5e-3,
+        lr_decay_milestones=[1500, 3000, 5000, 7000],
         lr_gamma=0.1,
-        eps_start=0.7,
+        eps_start=0.9,
         eps_end=0.05,
-        eps_decay=10000,
+        eps_decay=1500,
         TAU=0.005,
-        save_network_steps=2000,
-        print_loss_steps=500,
+        save_network_steps=200,
+        print_loss_steps=50,
     )
     reward_norm_factor: int = 256  # reward / reward_norm_factor for value function
 
@@ -332,7 +332,22 @@ def eval_dqn(
     policy_net = load_nets(network_version, in_features, out_features).policy_net
 
     policy_net.eval()
-    policy_net.load_state_dict(torch.load(trained_net_path))
+    try:
+        state_dict = torch.load(trained_net_path)
+    except FileNotFoundError:
+        try:
+            print(f"Loading model from {trained_net_path} failed.")
+            if "rl_2048/" in trained_net_path:
+                search_in_parent_path: str = trained_net_path.replace("rl_2048/", "")
+                print(f"Try to load model from {search_in_parent_path}")
+                state_dict = torch.load(search_in_parent_path)
+            else:
+                raise
+        except FileNotFoundError:
+            print(f"Loading model from {search_in_parent_path} still failed.")
+            raise
+
+    policy_net.load_state_dict(state_dict)
 
     move_failure = 0
     date_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")

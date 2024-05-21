@@ -23,7 +23,7 @@ build:
 	hatch build
 
 install:
-	pip install .
+	pip install -e .
 
 clean:
 	rm -rf dist
@@ -39,7 +39,7 @@ isort:
 	hatch run test:isort
 
 mypy:
-	mypy rl_2048 tests --check-untyped-defs
+	mypy rl_2048 tests --check-untyped-defs --ignore-missing-imports
 
 bandit:
 	bandit -c pyproject.toml -r .

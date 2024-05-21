@@ -24,6 +24,18 @@ class Tile:
 
         self.random_start()
 
+    def flattened(self) -> List[int]:
+        return [g for row in self.grids for g in row]
+
+    def __repr__(self) -> str:
+        s: str = "-" * (8 * self.width + 1) + "\n"
+        for row in self.grids:
+            s += "|"
+            for g in row:
+                s += f" {g:05d} |"
+            s += "\n" + "-" * (8 * self.width + 1) + "\n"
+        return s
+
     def set_grids(self, grids: List[List[int]]):
         if len(grids) != self.height:
             raise ValueError(
