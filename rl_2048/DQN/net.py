@@ -110,8 +110,6 @@ class Net(nn.Module):
                 )
 
             layers.append(activation_layer)
-            # if i < len(hidden_layer_sizes) - 1:
-            #     layers.append(nn.Dropout())
 
             in_features = out_features
         layers.append(nn.Linear(in_features, output_feature_size, bias))

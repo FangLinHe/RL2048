@@ -7,24 +7,19 @@ import shutil
 import time
 from collections import defaultdict
 from datetime import datetime
-from typing import Dict, List, Sequence, Set, Tuple
+from typing import Dict, List, Sequence
 
 import pygame
-from flax import linen as nn
 from jax import Array
 from jax import random as jrandom
 
 from rl_2048.game_engine import GameEngine
 from rl_2048.jax_dqn.dqn import DQN, TrainingParameters
-from rl_2048.jax_dqn.net import Net
+from rl_2048.jax_dqn.net import PREDEFINED_NETWORKS, load_predefined_net
 from rl_2048.jax_dqn.replay_memory import Action, Transition
 from rl_2048.jax_dqn.utils import flat_one_hot
 from rl_2048.tile import Tile
 from rl_2048.tile_plotter import PlotProperties, TilePlotter
-
-PREDEFINED_NETWORKS: Set[str] = {
-    "layers_1024_512_256",
-}
 
 
 def parse_args():
@@ -73,7 +68,8 @@ def parse_args():
         "--network_version",
         default="layers_1024_512_256",
         type=str,
-        help="Network version which maps to certain network structure. See `PREDEFINED_NETWORKS` for the names",
+        help="Network version which maps to certain network structure. "
+        f"Should be in {PREDEFINED_NETWORKS}",
     )
     args = parser.parse_args()
 
@@ -106,19 +102,6 @@ def write_json(move_failures, total_scores, max_grids, total_rewards, filepath: 
         shutil.move(tmp_file, filepath)
 
 
-def load_net(network_version: str, _in_features: int, out_features: int) -> nn.Module:
-    hidden_layers: Tuple[int, ...]
-    if network_version == "layers_1024_512_256":
-        hidden_layers = (1024, 512, 256)
-    else:
-        raise NameError(
-            f"Network version {network_version} not in {PREDEFINED_NETWORKS}."
-        )
-
-    policy_net: nn.Module = Net(hidden_layers, out_features, nn.relu)
-    return policy_net
-
-
 def train(
     show_board: bool,
     print_results: bool,
@@ -140,9 +123,8 @@ def train(
     # DQN part
     in_features: int = tile.width * tile.height * 16
     out_features: int = len(Action)
-    policy_net = load_net(
+    policy_net = load_predefined_net(
         network_version,
-        in_features,
         out_features,
     )
 
@@ -150,7 +132,7 @@ def train(
         memory_capacity=20000,
         gamma=0.99,
         batch_size=128,
-        lr=5e-3,
+        lr=1e-3,
         lr_decay_milestones=[15000, 30000, 50000, 70000],
         lr_gamma=0.1,
         eps_start=0.9,
