@@ -1,4 +1,4 @@
-from typing import Any, Callable, Mapping, Tuple, Union
+from typing import Any, Callable, Mapping, Set, Tuple, Union
 
 import jax
 import jax.numpy as jnp
@@ -19,10 +19,53 @@ GradFn: TypeAlias = Callable[
 ]
 
 
+PREDEFINED_NETWORKS: Set[str] = {
+    "layers_1024_512_256",
+    "layers_512_512_residual_0_128",
+    "layers_512_256_128_residual_0_64_32",
+    "layers_512_256_256_residual_0_128_128",
+}
+
+
 class BNTrainState(TrainState):
     """TrainState that is used for modules with BatchNorm layers."""
 
     batch_stats: Any
+
+
+class ResidualBlock(nn.Module):
+    in_dim: int
+    mid_dim: int
+    out_dim: int
+    activation_fn: Callable
+
+    @nn.compact
+    def __call__(self, x: Array, train: bool):
+        residual: Array = x
+        x = nn.Dense(self.mid_dim, use_bias=False)(x)
+        x = nn.BatchNorm(use_running_average=not train)(x)
+        x = self.activation_fn(x)
+        x = nn.Dense(self.mid_dim, use_bias=False)(x)
+        x = nn.BatchNorm(use_running_average=not train)(x)
+        x = self.activation_fn(x)
+        x = nn.Dense(self.out_dim, use_bias=False)(x)
+        x = nn.BatchNorm(use_running_average=not train)(x)
+
+        if residual.shape != x.shape:
+            pool_size: int = self.in_dim // self.out_dim
+            residual = nn.avg_pool(
+                residual[:, :, None],
+                window_shape=(
+                    1,
+                    pool_size,
+                ),
+                strides=(
+                    1,
+                    pool_size,
+                ),
+            )[:, :, 0]
+
+        return x + residual
 
 
 # All Flax Modules are Python 3.7 dataclasses.
@@ -31,15 +74,35 @@ class BNTrainState(TrainState):
 class Net(nn.Module):
     hidden_dims: Tuple[int, ...]
     output_dim: int
-    activation_fn: Callable
+    net_activation_fn: Callable
+    residual_mid_dims: Tuple[int, ...]
+
+    def check_correctness(self):
+        N_hidden, N_res = len(self.hidden_dims), len(self.residual_mid_dims)
+        if N_hidden != N_res:
+            if N_res == 0:
+                self.residual_mid_dims = tuple(0 for _ in range(N_hidden))
+            else:
+                raise ValueError(
+                    "`residual_mid_dims` should be either empty or have the same "
+                    f"length as `hidden_dims` ({N_hidden}), but got ({N_res})"
+                )
 
     @nn.compact
     def __call__(self, x: Array, train: bool = False) -> Array:
-        for hidden_dim in self.hidden_dims:
-            x = nn.Dense(features=hidden_dim, use_bias=False)(x)
-            # https://flax.readthedocs.io/en/latest/guides/training_techniques/batch_norm.html
-            x = nn.BatchNorm(use_running_average=not train)(x)
-            x = self.activation_fn(x)
+        in_dim: int = x.shape[-1]
+        for residual_mid_dim, hidden_dim in zip(
+            self.residual_mid_dims, self.hidden_dims
+        ):
+            if residual_mid_dim == 0:
+                x = nn.Dense(features=hidden_dim, use_bias=False)(x)
+                x = nn.BatchNorm(use_running_average=not train)(x)
+            else:
+                x = ResidualBlock(
+                    in_dim, residual_mid_dim, hidden_dim, self.net_activation_fn
+                )(x, train)
+            in_dim = hidden_dim
+            x = self.net_activation_fn(x)
 
         return nn.Dense(features=self.output_dim)(x)
 
@@ -51,8 +114,8 @@ def create_train_state(
     learning_rate: float,
     momentum: float = 0.9,
 ) -> BNTrainState:
-    variables: Variables = net.init(rng, jnp.ones([1, input_dim]))
-    tx: optax.GradientTransformation = optax.sgd(learning_rate, momentum)
+    variables: Variables = net.init(rng, jnp.ones([2, input_dim]))
+    tx: optax.GradientTransformation = optax.adamw(learning_rate)
     return BNTrainState.create(
         apply_fn=net.apply,
         params=variables["params"],
@@ -107,3 +170,33 @@ def train_forward(train_state: BNTrainState, inputs: Array) -> Tuple[Array, Vari
         mutable=["batch_stats"],
     )
     return predictions, updates
+
+
+def load_predefined_net(network_version: str, out_features: int) -> Net:
+    if network_version not in PREDEFINED_NETWORKS:
+        raise NameError(
+            f"Network version {network_version} not in {PREDEFINED_NETWORKS}."
+        )
+
+    hidden_layers: Tuple[int, ...]
+    residual_mid_feature_sizes: Tuple[int, ...]
+    if network_version == "layers_1024_512_256":
+        hidden_layers = (1024, 512, 256)
+        residual_mid_feature_sizes = ()
+    elif network_version == "layers_512_512_residual_0_128":
+        hidden_layers = (512, 512)
+        residual_mid_feature_sizes = (0, 128)
+    elif network_version == "layers_512_256_128_residual_0_64_32":
+        hidden_layers = (512, 256, 128)
+        residual_mid_feature_sizes = (0, 64, 32)
+    elif network_version == "layers_512_256_256_residual_0_128_128":
+        hidden_layers = (512, 256, 256)
+        residual_mid_feature_sizes = (0, 128, 128)
+
+    policy_net: Net = Net(
+        hidden_dims=hidden_layers,
+        output_dim=out_features,
+        net_activation_fn=nn.relu,
+        residual_mid_dims=residual_mid_feature_sizes,
+    )
+    return policy_net
