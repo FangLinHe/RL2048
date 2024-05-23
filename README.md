@@ -2,7 +2,15 @@
 
 # RL2048
 
-This project aims to implement a Python version of [2048 game](https://play2048.co/) and train an RL model to play the game.
+This project aims to implement a Python version of [2048 game](https://play2048.co/) and train an RL model to play the game. Current model can reach 1024 easily, but there are definitely still rooms for improvement! Below is the video of random play, which ends very soon...
+
+https://github.com/FangLinHe/RL2048/assets/8507520/7b8d6b01-1d69-464c-8bf5-501bcfb6d7c2
+
+And after the RL agency plays game 200,000 times, it can reach 1024 easily:
+
+https://github.com/FangLinHe/RL2048/assets/8507520/9289a894-91bc-40a2-bcdc-7d2a7c729b24
+
+
 
 ## Install and play
 
