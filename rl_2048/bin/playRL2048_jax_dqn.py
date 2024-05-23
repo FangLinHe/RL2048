@@ -132,15 +132,18 @@ def train(
         memory_capacity=20000,
         gamma=0.99,
         batch_size=128,
+        optimizer="adamw",
         lr=1e-3,
-        lr_decay_milestones=[15000, 30000, 50000, 70000],
+        lr_decay_milestones=[],
         lr_gamma=0.1,
+        loss_fn="huber_loss",
         eps_start=0.9,
         eps_end=0.05,
         eps_decay=15000,
         TAU=0.005,
         save_network_steps=2000,
         print_loss_steps=500,
+        tb_write_steps=50,
     )
     reward_norm_factor: int = 256  # reward / reward_norm_factor for value function
     rng: Array = jrandom.key(0)
@@ -156,6 +159,8 @@ def train(
     dqn = DQN(in_features, policy_net, output_net_dir, training_params, rng)
     if pre_trained_net_path != "":
         dqn.load_model(pre_trained_net_path)
+
+    dqn.summary_writer.add_text("output_json_path", output_json_fn)
 
     iter = 0
     start_time = time.time()
@@ -212,15 +217,11 @@ def train(
             )
             cur_state = next_state[:]
 
-            if game_engine.game_is_over:
-                total_rewards.append(total_reward)
-                total_reward = 0.0
-
             dqn.push_transition(transition)
             new_collect_count += 1
             if new_collect_count >= training_params.batch_size * 50:
                 for _ in range(50):
-                    _loss = dqn.optimize_model()
+                    _loss = dqn.optimize_model(game_iter=iter)
                 new_collect_count = 0
 
             if show_board:
@@ -234,9 +235,31 @@ def train(
                 if show_board:
                     plotter.plot_game_over()
                 move_failures.append(move_failure)
-                move_failure = 0
-                max_grids.append(tile.max_grid())
+                max_grid: int = tile.max_grid()
+                max_grids.append(max_grid)
                 total_scores.append(game_engine.score)
+
+                dqn.summary_writer.add_scalar(
+                    "game_statistics/game_iter", iter, dqn.optimize_steps
+                )
+                dqn.summary_writer.add_scalar(
+                    "game_statistics/move_failures", move_failure, dqn.optimize_steps
+                )
+                dqn.summary_writer.add_scalar(
+                    "game_statistics/total_scores",
+                    game_engine.score,
+                    dqn.optimize_steps,
+                )
+                dqn.summary_writer.add_scalar(
+                    "game_statistics/max_grids", max_grid, dqn.optimize_steps
+                )
+                dqn.summary_writer.add_scalar(
+                    "game_statistics/total_rewards", total_reward, dqn.optimize_steps
+                )
+
+                total_rewards.append(total_reward)
+                total_reward = 0.0
+
                 if print_results:
                     print(f"Move failures: {move_failures}")
                     print(f"Total scores: {total_scores}")
@@ -251,6 +274,7 @@ def train(
                         total_rewards,
                         output_json_fn,
                     )
+                move_failure = 0
                 game_engine.reset()
 
     write_json(move_failures, total_scores, max_grids, total_rewards, output_json_fn)

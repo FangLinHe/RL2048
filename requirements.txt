@@ -1,0 +1,6 @@
+# Tools to install before starting development
+hatch
+pytest
+mypy
+bandit
+pre-commit

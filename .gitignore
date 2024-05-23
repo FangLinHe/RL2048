@@ -13,4 +13,7 @@ Experiment
 dist
 
 # from pytest-cov
-.coverage
+.coverage*
+
+# Tensorboard
+runs*

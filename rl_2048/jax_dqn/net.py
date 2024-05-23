@@ -1,3 +1,4 @@
+import functools
 from typing import Any, Callable, Mapping, Set, Tuple, Union
 
 import jax
@@ -111,11 +112,12 @@ def create_train_state(
     rng: Array,
     net: nn.Module,
     input_dim: int,
-    learning_rate: float,
-    momentum: float = 0.9,
+    optimizer: str,
+    lr_scheduler_fn: optax.Schedule,
 ) -> BNTrainState:
     variables: Variables = net.init(rng, jnp.ones([2, input_dim]))
-    tx: optax.GradientTransformation = optax.adamw(learning_rate)
+    optimizer_fn = getattr(optax, optimizer)
+    tx: optax.GradientTransformation = optimizer_fn(lr_scheduler_fn)
     return BNTrainState.create(
         apply_fn=net.apply,
         params=variables["params"],
@@ -124,10 +126,14 @@ def create_train_state(
     )
 
 
-@jax.jit
+@functools.partial(jax.jit, static_argnums=(3, 4))
 def train_step(
-    train_state: BNTrainState, input_batch: Batch, targets: Array
-) -> Tuple[BNTrainState, Any]:
+    train_state: BNTrainState,
+    input_batch: Batch,
+    targets: Array,
+    learning_rate_fn: optax.Schedule,
+    optax_loss_fn: Callable,
+) -> Tuple[BNTrainState, Any, float]:
     """Computes gradients and loss for a single batch."""
 
     def loss_fn(params) -> Tuple[Array, Tuple[Array, Array]]:
@@ -139,7 +145,7 @@ def train_step(
         )
 
         predictions: Array = jnp.take_along_axis(raw_pred, input_batch.actions, axis=1)
-        loss = jnp.mean(optax.squared_error(predictions, targets))
+        loss = jnp.mean(optax_loss_fn(predictions, targets))
         return loss, (predictions, updates)
 
     grad_fn: GradFn = jax.value_and_grad(loss_fn, has_aux=True)
@@ -148,7 +154,9 @@ def train_step(
     train_state = train_state.apply_gradients(grads=grads)
     train_state = train_state.replace(batch_stats=updates["batch_stats"])
 
-    return train_state, loss
+    lr = learning_rate_fn(train_state.step)
+
+    return train_state, loss, lr
 
 
 @jax.jit

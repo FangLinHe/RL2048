@@ -16,7 +16,6 @@ def test_dqn():
         gamma=0.99,
         batch_size=2,
         lr=0.001,
-        sgd_momentum=0.9,
         eps_start=0.0,
         eps_end=0.0,
     )
@@ -45,7 +44,7 @@ def test_dqn():
 
             dqn.push_transition(t1)
             dqn.push_transition(t2)
-            loss = dqn.optimize_model()
+            loss = dqn.optimize_model(0)
             assert loss != 0.0
 
             print(dqn.get_action_epsilon_greedy(t2.state))

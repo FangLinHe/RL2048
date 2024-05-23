@@ -15,7 +15,8 @@ dependencies = [
     "matplotlib>=3.8.4",
     "jax>=0.4.16",
     "jaxlib>=0.4.16",
-    "flax>=0.8.3"
+    "flax>=0.8.3",
+    "tensorboardX>=2.6.2.2",
 ]
 authors = [{ name = "Fang-Lin He", email = "fanglin.he.ms@gmail.com" }]
 classifiers = [
@@ -67,13 +68,17 @@ exclude = [
 "pretrained_model/model_E_step_186000.pth" = "rl_2048/pretrained_model/model_E_step_186000.pth"
 
 [tool.hatch.envs.test]
-dependencies = ["ruff>=0.3.0", "pytest>=7.2.0", "pytest-cov>=4.0.0"]
+dependencies = [
+    "ruff>=0.3.0",
+    "pytest>=7.2.0",
+    "pytest-cov>=4.0.0",
+]
 
 [tool.hatch.envs.test.scripts]
 lint = "ruff check . --fix"
 isort = "ruff check --select I --fix"
 test = '''
-pytest -v --doctest-modules \
+python -m pytest -v --doctest-modules \
   --cov=./rl_2048 \
   --cov-report html \
   --cov-report term-missing \
