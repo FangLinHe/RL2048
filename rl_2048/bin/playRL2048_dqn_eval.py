@@ -4,7 +4,7 @@ import sys
 from rl_2048 import __file__ as rl_2048_file
 from rl_2048.bin.playRL2048_dqn import main as dqn_main
 
-BEST_MODEL_NAME: str = "model_E"
+BEST_MODEL_NAME: str = "model_E_step_186000"
 
 
 def get_pretrained_dir() -> str:

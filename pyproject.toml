@@ -61,10 +61,10 @@ exclude = [
 ]
 
 [tool.hatch.build.targets.sdist.force-include]
-"pretrained_model/model_E.pth" = "rl_2048/pretrained_model/model_E.pth"
+"pretrained_model/model_E_step_186000.pth" = "rl_2048/pretrained_model/model_E_step_186000.pth"
 
 [tool.hatch.build.targets.wheel.force-include]
-"pretrained_model/model_E.pth" = "rl_2048/pretrained_model/model_E.pth"
+"pretrained_model/model_E_step_186000.pth" = "rl_2048/pretrained_model/model_E_step_186000.pth"
 
 [tool.hatch.envs.test]
 dependencies = ["ruff>=0.3.0", "pytest>=7.2.0", "pytest-cov>=4.0.0"]
