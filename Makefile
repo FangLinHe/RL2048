@@ -8,22 +8,27 @@
 .PHONY: mypy
 .PHONY: bandit
 .PHONY: tag
+.PHONY: pre-commit
 
 PKG_VERSION=`hatch version`
 
 # Equivalent to python -m build --sdist --wheel --outdir dist/ .
 all:
-	hatch run test:isort
-	hatch run test:lint
-	mypy rl_2048 tests --check-untyped-defs
-	hatch run test:test
-	hatch build
+	pip install -r requirements.txt --quiet
+	make isort
+	make lint
+	make mypy
+	make bandit
+	make pre-commit
+	make test
+	make build
+	make install
 
 build:
 	hatch build
 
 install:
-	pip install -e .
+	pip install -e . --quiet
 
 clean:
 	rm -rf dist
