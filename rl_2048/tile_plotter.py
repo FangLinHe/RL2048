@@ -1,4 +1,4 @@
-from typing import List, NamedTuple, Tuple
+from typing import NamedTuple
 
 import pygame
 
@@ -55,7 +55,7 @@ class TilePlotter:
 
         self.win = pygame.display.set_mode(self.window_size())
         self.game_surface = pygame.surface.Surface(self.game_surface_size())
-        self.rects: List[List[pygame.Rect]] = [
+        self.rects: list[list[pygame.Rect]] = [
             [pygame.Rect(*self.grid_tlwh(x, y)) for x in range(self.tile.width)]
             for y in range(self.tile.height)
         ]
@@ -65,7 +65,7 @@ class TilePlotter:
 
         self.clean_canvas()
 
-    def window_size(self) -> Tuple[int, int]:
+    def window_size(self) -> tuple[int, int]:
         game_surface_w, game_surface_h = self.game_surface_size()
 
         return (
@@ -73,7 +73,7 @@ class TilePlotter:
             game_surface_h + self.plot_properties.info_board_height,
         )
 
-    def game_surface_size(self) -> Tuple[int, int]:
+    def game_surface_size(self) -> tuple[int, int]:
         height = (
             self.tile.height * self.plot_properties.grid_height
             + (self.tile.height + 1) * self.plot_properties.grid_space
@@ -104,7 +104,7 @@ class TilePlotter:
     def grid_tl(self, xy: Location) -> Location:
         return Location(self.grid_left(xy.x), self.grid_top(xy.y))
 
-    def grid_tlwh(self, x, y) -> Tuple[int, int, int, int]:
+    def grid_tlwh(self, x, y) -> tuple[int, int, int, int]:
         return (
             self.grid_left(x),
             self.grid_top(y),
@@ -116,7 +116,7 @@ class TilePlotter:
         self,
         grid_value: int,
         rect: pygame.Rect,
-        tlwh: Tuple[int, int, int, int],
+        tlwh: tuple[int, int, int, int],
     ):
         colorset = colors.color_palette.get(grid_value, colors.default_colorset)
         pygame.draw.rect(
@@ -194,7 +194,7 @@ class TilePlotter:
                 pygame.display.update()
 
                 # Plot moving grids
-                affected_areas: List[pygame.Rect] = []
+                affected_areas: list[pygame.Rect] = []
                 for animation, rect in zip(animations, src_rects):
                     loc = animation.next_location()
                     tlwh = (*loc, grid_w, grid_h)

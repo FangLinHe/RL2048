@@ -2,7 +2,6 @@ import argparse
 import json
 import math
 from collections import Counter
-from typing import List
 
 import matplotlib.pyplot as plt
 
@@ -23,15 +22,15 @@ def parse_args():
     return parser.parse_args()
 
 
-def moving_avg(values: List[float], window_size: int) -> List[float]:
-    avgs: List[float] = []
+def moving_avg(values: list[float], window_size: int) -> list[float]:
+    avgs: list[float] = []
     for beg in range(0, len(values), window_size):
         avgs.append(sum(values[beg : beg + window_size]) / window_size)
 
     return avgs
 
 
-def plot_max_grids_statistics(max_grids: List[float]):
+def plot_max_grids_statistics(max_grids: list[float]):
     counter = Counter(max_grids)
     log2_keys = [int(math.log2(k)) for k in counter]
     barchart = plt.bar(log2_keys, list(counter.values()))

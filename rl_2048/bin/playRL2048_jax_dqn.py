@@ -6,8 +6,8 @@ import os
 import shutil
 import time
 from collections import defaultdict
+from collections.abc import Sequence
 from datetime import datetime
-from typing import Dict, List, Sequence
 
 import pygame
 from jax import Array
@@ -109,16 +109,16 @@ def train(
     output_net_prefix: str,
     max_iters: int,
     network_version: str,
-    pre_trained_net_path: str = "",
+    pretrained_net_path: str = "",
 ):
     tile: Tile = Tile(width=4, height=4)
     plot_properties: PlotProperties = PlotProperties(fps=60, delay_after_plot=50)
     plotter: TilePlotter = TilePlotter(tile, plot_properties)
     game_engine: GameEngine = GameEngine(tile)
 
-    move_failures: List[int] = []
-    total_scores: List[int] = []
-    max_grids: List[int] = []
+    move_failures: list[int] = []
+    total_scores: list[int] = []
+    max_grids: list[int] = []
 
     # DQN part
     in_features: int = tile.width * tile.height * 16
@@ -133,9 +133,9 @@ def train(
         gamma=0.99,
         batch_size=128,
         optimizer="adamw",
-        lr=1e-3,
-        lr_decay_milestones=[50000],
-        lr_gamma=0.1,
+        lr=1e-4,
+        lr_decay_milestones=[],
+        lr_gamma=1.0,
         loss_fn="huber_loss",
         eps_start=0.9,
         eps_end=0.05,
@@ -144,6 +144,7 @@ def train(
         save_network_steps=2000,
         print_loss_steps=500,
         tb_write_steps=50,
+        pretrained_net_path=pretrained_net_path,
     )
     reward_norm_factor: int = 256  # reward / reward_norm_factor for value function
     rng: Array = jrandom.key(0)
@@ -157,8 +158,8 @@ def train(
     os.makedirs(output_net_dir)
 
     dqn = DQN(in_features, policy_net, output_net_dir, training_params, rng)
-    if pre_trained_net_path != "":
-        dqn.load_model(pre_trained_net_path)
+    if pretrained_net_path != "":
+        dqn.load_model(pretrained_net_path)
 
     dqn.summary_writer.add_text("output_json_path", output_json_fn)
 
@@ -166,8 +167,8 @@ def train(
     start_time = time.time()
     cur_state: Sequence[float] = flat_one_hot(tile.flattened(), 16)
     next_state: Sequence[float] = cur_state
-    total_rewards: List[float] = []
-    suc_move_statistics: Dict[Action, int] = defaultdict(int)
+    total_rewards: list[float] = []
+    suc_move_statistics: dict[Action, int] = defaultdict(int)
     total_reward: float = 0.0
 
     new_collect_count: int = 0
@@ -219,9 +220,8 @@ def train(
 
             dqn.push_transition(transition)
             new_collect_count += 1
-            if new_collect_count >= training_params.batch_size * 50:
-                for _ in range(50):
-                    _loss = dqn.optimize_model(game_iter=iter)
+            if new_collect_count >= training_params.batch_size:
+                _loss = dqn.optimize_model(game_iter=iter)
                 new_collect_count = 0
 
             if show_board:

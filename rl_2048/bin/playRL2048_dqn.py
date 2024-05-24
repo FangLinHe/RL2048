@@ -6,9 +6,10 @@ import math
 import os
 import shutil
 import time
+from collections.abc import Sequence
 from datetime import datetime
 from random import shuffle
-from typing import List, NamedTuple, Sequence, Set
+from typing import NamedTuple
 
 import pygame
 import torch
@@ -27,7 +28,7 @@ class NetsTuple(NamedTuple):
     target_net: nn.Module
 
 
-PREDEFINED_NETWORKS: Set[str] = {
+PREDEFINED_NETWORKS: set[str] = {
     "layers_1024_512_256",
     "layers_512_512_residual_0_128",
     "layers_512_256_128_residual_0_64_32",
@@ -124,8 +125,8 @@ def write_json(move_failures, total_scores, max_grids, total_rewards, filepath: 
 
 
 def load_nets(network_version: str, in_features: int, out_features: int) -> NetsTuple:
-    hidden_layers: List[int]
-    residual_mid_feature_sizes: List[int]
+    hidden_layers: list[int]
+    residual_mid_feature_sizes: list[int]
     if network_version == "layers_1024_512_256":
         hidden_layers = [1024, 512, 256]
         residual_mid_feature_sizes = []
@@ -167,16 +168,16 @@ def train(
     output_net_prefix: str,
     max_iters: int,
     network_version: str,
-    pre_trained_net_path: str = "",
+    pretrained_net_path: str = "",
 ):
     tile: Tile = Tile(width=4, height=4)
     plot_properties: PlotProperties = PlotProperties(fps=60, delay_after_plot=50)
     plotter: TilePlotter = TilePlotter(tile, plot_properties)
     game_engine: GameEngine = GameEngine(tile)
 
-    move_failures: List[int] = []
-    total_scores: List[int] = []
-    max_grids: List[int] = []
+    move_failures: list[int] = []
+    total_scores: list[int] = []
+    max_grids: list[int] = []
 
     # DQN part
     in_features: int = tile.width * tile.height * 16
@@ -186,8 +187,8 @@ def train(
         in_features,
         out_features,
     )
-    if pre_trained_net_path != "":
-        policy_net.load_state_dict(torch.load(pre_trained_net_path))
+    if pretrained_net_path != "":
+        policy_net.load_state_dict(torch.load(pretrained_net_path))
 
     training_params = TrainingParameters(
         memory_capacity=20000,
@@ -217,7 +218,7 @@ def train(
     start_time = time.time()
     cur_state: Sequence[float] = make_state_one_hot(tile)
     next_state: Sequence[float] = []
-    total_rewards: List[float] = []
+    total_rewards: list[float] = []
     total_reward: float = 0.0
 
     new_collect_count: int = 0
@@ -322,9 +323,9 @@ def eval_dqn(
     plotter: TilePlotter = TilePlotter(tile, plot_properties)
     game_engine: GameEngine = GameEngine(tile)
 
-    move_failures: List[int] = []
-    total_scores: List[int] = []
-    max_grids: List[int] = []
+    move_failures: list[int] = []
+    total_scores: list[int] = []
+    max_grids: list[int] = []
 
     # DQN part
     in_features: int = tile.width * tile.height * 16
@@ -357,7 +358,7 @@ def eval_dqn(
     start_time = time.time()
     cur_state: Sequence[float] = make_state_one_hot(tile)
 
-    action_candidates: List[Action] = []
+    action_candidates: list[Action] = []
     inf_times = []
 
     prev_score: int = game_engine.score

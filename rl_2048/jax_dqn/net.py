@@ -1,5 +1,6 @@
 import functools
-from typing import Any, Callable, Mapping, Set, Tuple, Union
+from collections.abc import Mapping
+from typing import Any, Callable, Union
 
 import jax
 import jax.numpy as jnp
@@ -16,11 +17,11 @@ Params: TypeAlias = FrozenDict[str, Any]
 Variables: TypeAlias = Union[FrozenDict[str, Mapping[str, Any]], dict[str, Any]]
 GradFn: TypeAlias = Callable[
     [Params],
-    Tuple[Array, Array],
+    tuple[Array, Array],
 ]
 
 
-PREDEFINED_NETWORKS: Set[str] = {
+PREDEFINED_NETWORKS: set[str] = {
     "layers_1024_512_256",
     "layers_512_512_residual_0_128",
     "layers_512_256_128_residual_0_64_32",
@@ -73,10 +74,10 @@ class ResidualBlock(nn.Module):
 # Since dataclasses take over __init__, you should instead override setup(),
 # which is automatically called to initialize the module.
 class Net(nn.Module):
-    hidden_dims: Tuple[int, ...]
+    hidden_dims: tuple[int, ...]
     output_dim: int
     net_activation_fn: Callable
-    residual_mid_dims: Tuple[int, ...]
+    residual_mid_dims: tuple[int, ...]
 
     def check_correctness(self):
         N_hidden, N_res = len(self.hidden_dims), len(self.residual_mid_dims)
@@ -133,10 +134,10 @@ def train_step(
     targets: Array,
     learning_rate_fn: optax.Schedule,
     optax_loss_fn: Callable,
-) -> Tuple[BNTrainState, Any, float]:
+) -> tuple[BNTrainState, Any, float]:
     """Computes gradients and loss for a single batch."""
 
-    def loss_fn(params) -> Tuple[Array, Tuple[Array, Array]]:
+    def loss_fn(params) -> tuple[Array, tuple[Array, Array]]:
         raw_pred, updates = train_state.apply_fn(
             {"params": params, "batch_stats": train_state.batch_stats},
             x=input_batch.states,
@@ -151,10 +152,10 @@ def train_step(
     grad_fn: GradFn = jax.value_and_grad(loss_fn, has_aux=True)
     (loss, (_predictions, updates)), grads = grad_fn(train_state.params)
 
+    lr = learning_rate_fn(train_state.step)
+
     train_state = train_state.apply_gradients(grads=grads)
     train_state = train_state.replace(batch_stats=updates["batch_stats"])
-
-    lr = learning_rate_fn(train_state.step)
 
     return train_state, loss, lr
 
@@ -170,7 +171,7 @@ def eval_forward(train_state: BNTrainState, inputs: Array) -> Array:
 
 
 @jax.jit
-def train_forward(train_state: BNTrainState, inputs: Array) -> Tuple[Array, Variables]:
+def train_forward(train_state: BNTrainState, inputs: Array) -> tuple[Array, Variables]:
     predictions, updates = train_state.apply_fn(
         {"params": train_state.params, "batch_stats": train_state.batch_stats},
         x=inputs,
@@ -186,8 +187,8 @@ def load_predefined_net(network_version: str, out_features: int) -> Net:
             f"Network version {network_version} not in {PREDEFINED_NETWORKS}."
         )
 
-    hidden_layers: Tuple[int, ...]
-    residual_mid_feature_sizes: Tuple[int, ...]
+    hidden_layers: tuple[int, ...]
+    residual_mid_feature_sizes: tuple[int, ...]
     if network_version == "layers_1024_512_256":
         hidden_layers = (1024, 512, 256)
         residual_mid_feature_sizes = ()
