@@ -134,12 +134,12 @@ def train(
         batch_size=128,
         optimizer="adamw",
         lr=1e-3,
-        lr_decay_milestones=[],
+        lr_decay_milestones=[50000],
         lr_gamma=0.1,
         loss_fn="huber_loss",
         eps_start=0.9,
         eps_end=0.05,
-        eps_decay=15000,
+        eps_decay=10000,
         TAU=0.005,
         save_network_steps=2000,
         print_loss_steps=500,
@@ -240,21 +240,21 @@ def train(
                 total_scores.append(game_engine.score)
 
                 dqn.summary_writer.add_scalar(
-                    "game_statistics/game_iter", iter, dqn.optimize_steps
+                    "game_statistics/opt_steps", dqn.optimize_steps, iter
                 )
                 dqn.summary_writer.add_scalar(
-                    "game_statistics/move_failures", move_failure, dqn.optimize_steps
+                    "game_statistics/move_failures", move_failure, iter
                 )
                 dqn.summary_writer.add_scalar(
                     "game_statistics/total_scores",
                     game_engine.score,
-                    dqn.optimize_steps,
+                    iter,
                 )
                 dqn.summary_writer.add_scalar(
-                    "game_statistics/max_grids", max_grid, dqn.optimize_steps
+                    "game_statistics/max_grids", max_grid, iter
                 )
                 dqn.summary_writer.add_scalar(
-                    "game_statistics/total_rewards", total_reward, dqn.optimize_steps
+                    "game_statistics/total_rewards", total_reward, iter
                 )
 
                 total_rewards.append(total_reward)
