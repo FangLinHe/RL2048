@@ -8,13 +8,20 @@ import time
 from collections import defaultdict
 from collections.abc import Sequence
 from datetime import datetime
+from random import shuffle
+from typing import Callable
 
+import jax
 import pygame
+from flax.training.checkpoints import PyTree, restore_checkpoint
 from jax import Array
 from jax import random as jrandom
 
-from rl_2048.game_engine import GameEngine
-from rl_2048.jax_dqn.dqn import DQN, TrainingParameters
+from rl_2048.game_engine import GameEngine, MoveResult
+from rl_2048.jax_dqn.dqn import (
+    DQN,
+    TrainingParameters,
+)
 from rl_2048.jax_dqn.net import PREDEFINED_NETWORKS, load_predefined_net
 from rl_2048.jax_dqn.replay_memory import Action, Transition
 from rl_2048.jax_dqn.utils import flat_one_hot
@@ -100,6 +107,165 @@ def write_json(move_failures, total_scores, max_grids, total_rewards, filepath: 
     with open(tmp_file, "w") as fid:
         json.dump(output_json, fid)
         shutil.move(tmp_file, filepath)
+
+
+def eval_dqn(
+    show_board: bool,
+    print_results: bool,
+    output_json_prefix: str,
+    max_iters: int,
+    trained_net_path: str,
+    network_version: str,
+):
+    tile: Tile = Tile(width=4, height=4)
+    plot_properties: PlotProperties = PlotProperties(fps=60, delay_after_plot=50)
+    plotter: TilePlotter = TilePlotter(tile, plot_properties)
+    game_engine: GameEngine = GameEngine(tile)
+
+    move_failures: list[int] = []
+    total_scores: list[int] = []
+    max_grids: list[int] = []
+
+    # DQN part
+    out_features: int = len(Action)
+    policy_net = load_predefined_net(
+        network_version,
+        out_features,
+    )
+    policy_net_apply: Callable = jax.jit(policy_net.apply)
+    policy_net_variables: PyTree
+    try:
+        policy_net_variables = restore_checkpoint(
+            os.path.dirname(trained_net_path), None
+        )
+    except FileNotFoundError:
+        try:
+            print(f"Loading model from {trained_net_path} failed.")
+            if "rl_2048/" in trained_net_path:
+                search_in_parent_path: str = trained_net_path.replace("rl_2048/", "")
+                print(f"Try to load model from {search_in_parent_path}")
+                policy_net_variables = restore_checkpoint(
+                    os.path.dirname(search_in_parent_path), None
+                )
+            else:
+                raise
+        except FileNotFoundError:
+            print(f"Loading model from {search_in_parent_path} still failed.")
+            raise
+    policy_net_variables = {
+        "batch_stats": policy_net_variables["batch_stats"],
+        "params": policy_net_variables["params"],
+    }
+    move_failure = 0
+    date_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_json_fn = f"{output_json_prefix}_{date_time_str}.json"
+
+    iter = 0
+    start_time = time.time()
+    cur_state: Sequence[float] = flat_one_hot(tile.flattened(), 16)
+
+    action_candidates: list[Action] = []
+    inf_times = []
+
+    prev_score: int = game_engine.score
+    score_not_increasing_count: int = 0
+    while max_iters < 0 or iter < max_iters:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+
+            if event.type == pygame.KEYUP and event.key == pygame.K_r:
+                game_engine.reset()
+                prev_score = game_engine.score
+
+        if not game_engine.game_is_over:
+            start_inf_time = time.time()
+            policy_net_output = DQN.infer_action_net(
+                policy_net_apply, policy_net_variables, cur_state
+            )
+            inf_times.append(time.time() - start_inf_time)
+
+            action: Action = policy_net_output.action
+
+            move_result: MoveResult
+            if action == Action.UP:
+                move_result = game_engine.move_up()
+            elif action == Action.DOWN:
+                move_result = game_engine.move_down()
+            elif action == Action.LEFT:
+                move_result = game_engine.move_left()
+            else:  # action == Action.RIGHT
+                move_result = game_engine.move_right()
+
+            if move_result.suc:
+                game_engine.generate_new()
+            else:
+                move_failure += 1
+                action_candidates = [
+                    candidate for candidate in Action if candidate != action
+                ]
+                shuffle(action_candidates)
+                for action in action_candidates:
+                    if action == Action.UP:
+                        move_result = game_engine.move_up()
+                    elif action == Action.DOWN:
+                        move_result = game_engine.move_down()
+                    elif action == Action.LEFT:
+                        move_result = game_engine.move_left()
+                    else:  # action == Action.RIGHT
+                        move_result = game_engine.move_right()
+
+                    if move_result.suc:
+                        break
+                    move_failure += 1
+                if not move_result.suc:
+                    raise ValueError("Game is not over yet but all actions failed")
+
+            if game_engine.score == prev_score:
+                score_not_increasing_count += 1
+            else:
+                score_not_increasing_count = 0
+            prev_score = game_engine.score
+
+            cur_state = flat_one_hot(tile.flattened(), 16)
+
+            if show_board:
+                plotter.plot(game_engine.score)
+            else:
+                tile.reset_animation_grids()
+
+            if game_engine.game_is_over:
+                iter += 1
+                if show_board:
+                    plotter.plot_game_over()
+                move_failures.append(move_failure)
+                move_failure = 0
+                max_grids.append(tile.max_grid())
+                total_scores.append(game_engine.score)
+                if print_results:
+                    print(f"Move failures: {move_failures}")
+                    print(f"Total scores: {total_scores}")
+                    print(f"Max grids: {max_grids}")
+                if iter % 10 == 0:
+                    write_json(
+                        move_failures,
+                        total_scores,
+                        max_grids,
+                        [],  # total_rewards,
+                        output_json_fn,
+                    )
+                game_engine.reset()
+
+    write_json(move_failures, total_scores, max_grids, [], output_json_fn)
+    elapsed_sec = time.time() - start_time
+    print(
+        f"Done running {max_iters} times of experiments in {round(elapsed_sec * 1000.0)} millisecond(s)."
+    )
+    print(
+        f"Average inference time: {(sum(inf_times) / len(inf_times)) * 1000.0} millisecond(s)"
+    )
+    print(f"See results in {output_json_fn}.")
 
 
 def train(
@@ -196,7 +362,6 @@ def train(
 
             if move_result.suc:
                 suc_move_statistics[action] += 1
-                # print(tile)
                 game_engine.generate_new()
                 reward += move_result.score
             else:
@@ -288,7 +453,14 @@ def train(
 def main():
     args = parse_args()
     if args.eval:
-        pass
+        eval_dqn(
+            args.show_board,
+            args.print_results,
+            args.output_json_prefix,
+            args.max_iters,
+            args.trained_net_path,
+            args.network_version,
+        )
     else:
         train(
             args.show_board,

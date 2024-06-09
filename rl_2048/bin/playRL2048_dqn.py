@@ -319,7 +319,7 @@ def eval_dqn(
     network_version: str,
 ):
     tile: Tile = Tile(width=4, height=4)
-    plot_properties: PlotProperties = PlotProperties(fps=60, delay_after_plot=50)
+    plot_properties: PlotProperties = PlotProperties(fps=60, delay_after_plot=0)
     plotter: TilePlotter = TilePlotter(tile, plot_properties)
     game_engine: GameEngine = GameEngine(tile)
 
