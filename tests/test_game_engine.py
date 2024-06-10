@@ -2,7 +2,7 @@ from typing import NamedTuple
 
 import pytest
 
-from rl_2048.dqn.torch.replay_memory import Action
+from rl_2048.dqn.common import Action
 from rl_2048.game_engine import GameEngine, MoveResult
 from rl_2048.tile import Tile
 

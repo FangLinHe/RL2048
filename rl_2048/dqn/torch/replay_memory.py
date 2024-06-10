@@ -1,17 +1,11 @@
 import random
 from collections import deque
 from collections.abc import Sequence
-from enum import Enum
 from typing import NamedTuple
 
 import torch
 
-
-class Action(Enum):
-    UP = 0
-    DOWN = 1
-    LEFT = 2
-    RIGHT = 3
+from rl_2048.dqn.common import Action
 
 
 # N: number of grids in the board

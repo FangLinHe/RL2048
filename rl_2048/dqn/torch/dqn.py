@@ -1,43 +1,14 @@
 import math
-import os
 import tempfile
 from collections.abc import Sequence
 from random import SystemRandom
-from typing import NamedTuple, Union
 
 import torch
 from torch import Tensor, nn, optim
 
+from rl_2048.dqn.common import Action, PolicyNetOutput, TrainingParameters
 from rl_2048.dqn.torch.net import Net
-from rl_2048.dqn.torch.replay_memory import Action, Batch, ReplayMemory, Transition
-
-
-class TrainingParameters(NamedTuple):
-    memory_capacity: int = 1024
-    gamma: float = 0.99
-    batch_size: int = 64
-    lr: float = 0.001
-    lr_decay_milestones: Union[int, list[int]] = 100
-    lr_gamma: float = 0.1
-
-    # for epsilon-greedy algorithm
-    eps_start: float = 0.9
-    eps_end: float = 0.05
-    eps_decay: float = 400
-
-    # update rate of the target network
-    TAU: float = 0.005
-
-    save_network_steps: int = 1000
-    print_loss_steps: int = 100
-
-
-script_file_path = os.path.dirname(os.path.abspath(__file__))
-
-
-class PolicyNetOutput(NamedTuple):
-    expected_value: float
-    action: Action
+from rl_2048.dqn.torch.replay_memory import Batch, ReplayMemory, Transition
 
 
 class DQN:

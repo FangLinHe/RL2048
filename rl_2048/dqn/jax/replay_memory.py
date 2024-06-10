@@ -1,6 +1,5 @@
 import random
 from collections.abc import Sequence
-from enum import Enum
 from typing import NamedTuple
 
 import jax.numpy as jnp
@@ -8,12 +7,7 @@ import jax.random as jrandom
 import numpy as np
 from jax import Array
 
-
-class Action(Enum):
-    UP = 0
-    DOWN = 1
-    LEFT = 2
-    RIGHT = 3
+from rl_2048.dqn.common import Action
 
 
 # N: number of grids in the board
