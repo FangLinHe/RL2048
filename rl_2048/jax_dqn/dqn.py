@@ -2,13 +2,13 @@ import math
 import os
 from collections.abc import Sequence
 from random import SystemRandom
-from typing import Any, NamedTuple, Optional, Union
+from typing import Any, Callable, NamedTuple, Optional, Union
 
 import jax.numpy as jnp
 import numpy as np
 import optax
 from flax import linen as nn
-from flax.training.checkpoints import restore_checkpoint, save_checkpoint
+from flax.training.checkpoints import PyTree, restore_checkpoint, save_checkpoint
 from jax import Array
 from jax.tree_util import tree_map
 from tensorboardX import SummaryWriter
@@ -162,6 +162,20 @@ class DQN:
 
         self.summary_writer.add_hparams(_make_hparams_dict(training_params), dict())
         self.summary_writer.add_text("output_net_dir", output_net_dir)
+
+    @staticmethod
+    def infer_action_net(
+        net_apply: Callable,
+        variables: PyTree,
+        state: Sequence[float],
+    ) -> PolicyNetOutput:
+        raw_values: Array = net_apply(
+            variables,
+            jnp.array(np.array(state))[None, :],
+        )[0]
+        best_action: int = jnp.argmax(raw_values).item()
+        best_value: float = raw_values[best_action].item()
+        return PolicyNetOutput(best_value, Action(best_action))
 
     @staticmethod
     def infer_action(
