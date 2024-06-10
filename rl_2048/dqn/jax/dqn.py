@@ -2,7 +2,7 @@ import math
 import os
 from collections.abc import Sequence
 from random import SystemRandom
-from typing import Any, Callable, NamedTuple, Optional, Union
+from typing import Any, Callable, Optional
 
 import jax.numpy as jnp
 import numpy as np
@@ -13,46 +13,14 @@ from jax import Array
 from jax.tree_util import tree_map
 from tensorboardX import SummaryWriter
 
+from rl_2048.dqn.common import Action, PolicyNetOutput, TrainingParameters
 from rl_2048.dqn.jax.net import (
     BNTrainState,
     create_train_state,
     eval_forward,
     train_step,
 )
-from rl_2048.dqn.jax.replay_memory import Action, Batch, ReplayMemory, Transition
-
-
-class TrainingParameters(NamedTuple):
-    memory_capacity: int = 1024
-    gamma: float = 0.99
-    batch_size: int = 64
-    optimizer: str = "adamw"
-    lr: float = 0.001
-    lr_decay_milestones: Union[int, list[int]] = 100
-    lr_gamma: Union[float, list[float]] = 0.1
-    loss_fn: str = "huber_loss"
-
-    # for epsilon-greedy algorithm
-    eps_start: float = 0.9
-    eps_end: float = 0.05
-    eps_decay: float = 400
-
-    # update rate of the target network
-    TAU: float = 0.005
-
-    save_network_steps: int = 1000
-    print_loss_steps: int = 100
-    tb_write_steps: int = 50
-
-    pretrained_net_path: str = ""
-
-
-script_file_path = os.path.dirname(os.path.abspath(__file__))
-
-
-class PolicyNetOutput(NamedTuple):
-    expected_value: float
-    action: Action
+from rl_2048.dqn.jax.replay_memory import Batch, ReplayMemory, Transition
 
 
 def create_learning_rate_fn(training_params: TrainingParameters) -> optax.Schedule:

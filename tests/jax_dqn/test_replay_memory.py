@@ -1,7 +1,8 @@
 import jax.random as jrandom
 from jax import Array
 
-from rl_2048.dqn.jax.replay_memory import Action, Batch, ReplayMemory, Transition
+from rl_2048.dqn.common import Action
+from rl_2048.dqn.jax.replay_memory import Batch, ReplayMemory, Transition
 
 all_memory_fields = {"states", "actions", "next_states", "rewards", "games_over"}
 

@@ -7,6 +7,7 @@ from jax import Array
 from jax import random as jrandom
 from optax import Schedule
 
+from rl_2048.dqn.common import Action
 from rl_2048.dqn.jax.dqn import DQN, TrainingParameters, create_learning_rate_fn
 from rl_2048.dqn.jax.net import (
     PREDEFINED_NETWORKS,
@@ -15,7 +16,7 @@ from rl_2048.dqn.jax.net import (
     load_predefined_net,
     train_step,
 )
-from rl_2048.dqn.jax.replay_memory import Action, Batch, Transition
+from rl_2048.dqn.jax.replay_memory import Batch, Transition
 
 
 def test_dqn():
