@@ -11,7 +11,7 @@ from flax.training.train_state import TrainState
 from jax import Array
 from typing_extensions import TypeAlias
 
-from rl_2048.jax_dqn.replay_memory import Batch
+from rl_2048.dqn.jax.replay_memory import Batch
 
 Params: TypeAlias = FrozenDict[str, Any]
 Variables: TypeAlias = Union[FrozenDict[str, Mapping[str, Any]], dict[str, Any]]

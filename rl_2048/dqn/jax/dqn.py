@@ -13,13 +13,13 @@ from jax import Array
 from jax.tree_util import tree_map
 from tensorboardX import SummaryWriter
 
-from rl_2048.jax_dqn.net import (
+from rl_2048.dqn.jax.net import (
     BNTrainState,
     create_train_state,
     eval_forward,
     train_step,
 )
-from rl_2048.jax_dqn.replay_memory import Action, Batch, ReplayMemory, Transition
+from rl_2048.dqn.jax.replay_memory import Action, Batch, ReplayMemory, Transition
 
 
 class TrainingParameters(NamedTuple):

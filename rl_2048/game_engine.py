@@ -2,7 +2,7 @@ from random import SystemRandom
 from typing import NamedTuple
 
 from rl_2048.common import Location
-from rl_2048.DQN.replay_memory import Action
+from rl_2048.dqn.torch.replay_memory import Action
 from rl_2048.tile import MovingGrid, Tile
 
 
