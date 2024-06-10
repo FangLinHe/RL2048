@@ -1,8 +1,9 @@
 import math
 import os
 import tempfile
+from collections.abc import Sequence
 from random import SystemRandom
-from typing import List, NamedTuple, Sequence, Union
+from typing import NamedTuple, Union
 
 import torch
 from torch import Tensor, nn, optim
@@ -16,7 +17,7 @@ class TrainingParameters(NamedTuple):
     gamma: float = 0.99
     batch_size: int = 64
     lr: float = 0.001
-    lr_decay_milestones: Union[int, List[int]] = 100
+    lr_decay_milestones: Union[int, list[int]] = 100
     lr_gamma: float = 0.1
 
     # for epsilon-greedy algorithm
@@ -72,7 +73,7 @@ class DQN:
             )
         self.memory = ReplayMemory(self.training_params.memory_capacity)
         self.optimize_steps: int = 0
-        self.losses: List[float] = []
+        self.losses: list[float] = []
 
         self._cryptogen: SystemRandom = SystemRandom()
 

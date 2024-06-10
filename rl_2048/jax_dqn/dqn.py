@@ -1,7 +1,8 @@
 import math
 import os
+from collections.abc import Sequence
 from random import SystemRandom
-from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Union
+from typing import Any, NamedTuple, Optional, Union
 
 import jax.numpy as jnp
 import numpy as np
@@ -27,8 +28,8 @@ class TrainingParameters(NamedTuple):
     batch_size: int = 64
     optimizer: str = "adamw"
     lr: float = 0.001
-    lr_decay_milestones: Union[int, List[int]] = 100
-    lr_gamma: float = 0.1
+    lr_decay_milestones: Union[int, list[int]] = 100
+    lr_gamma: Union[float, list[float]] = 0.1
     loss_fn: str = "huber_loss"
 
     # for epsilon-greedy algorithm
@@ -43,6 +44,8 @@ class TrainingParameters(NamedTuple):
     print_loss_steps: int = 100
     tb_write_steps: int = 50
 
+    pretrained_net_path: str = ""
+
 
 script_file_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -56,6 +59,11 @@ def create_learning_rate_fn(training_params: TrainingParameters) -> optax.Schedu
     """Creates learning rate schedule."""
     lr_scheduler_fn: optax.Schedule
     if isinstance(training_params.lr_decay_milestones, int):
+        if not isinstance(training_params.lr_gamma, float):
+            raise ValueError(
+                "Type of `lr_gamma` should be float, but got "
+                f"{type(training_params.lr_gamma)}."
+            )
         lr_scheduler_fn = optax.exponential_decay(
             init_value=training_params.lr,
             transition_steps=training_params.lr_decay_milestones,
@@ -63,10 +71,27 @@ def create_learning_rate_fn(training_params: TrainingParameters) -> optax.Schedu
             staircase=True,
         )
     elif len(training_params.lr_decay_milestones) > 0:
-        boundaries_and_scales = {
-            step: training_params.lr_gamma
-            for step in training_params.lr_decay_milestones
-        }
+        boundaries_and_scales: dict[int, float]
+        if isinstance(training_params.lr_gamma, float):
+            boundaries_and_scales = {
+                step: training_params.lr_gamma
+                for step in training_params.lr_decay_milestones
+            }
+        else:
+            gamma_len = len(training_params.lr_gamma)
+            decay_len = len(training_params.lr_decay_milestones)
+            if gamma_len != decay_len:
+                raise ValueError(
+                    f"Lengths of `lr_gamma` ({gamma_len}) should be the same as "
+                    f"`lr_decay_milestones` ({decay_len})"
+                )
+            boundaries_and_scales = {
+                step: gamma
+                for step, gamma in zip(
+                    training_params.lr_decay_milestones, training_params.lr_gamma
+                )
+            }
+
         lr_scheduler_fn = optax.piecewise_constant_schedule(
             init_value=training_params.lr, boundaries_and_scales=boundaries_and_scales
         )
@@ -86,11 +111,13 @@ class DQN:
         random_key: Array,
     ):
         def _make_hparams_dict(params: TrainingParameters):
-            hparams: Dict[str, Any] = {}
+            hparams: dict[str, Any] = {}
             for k, v in params._asdict().items():
                 key = f"hparams/{k}"
                 value = (
-                    v if not isinstance(v, list) else ", ".join(str(elm) for elm in v)
+                    v
+                    if not isinstance(v, list)
+                    else f"[{', '.join(str(elm) for elm in v)}]"
                 )
                 hparams[key] = value
             return hparams
@@ -126,7 +153,7 @@ class DQN:
             self.random_key, self.training_params.memory_capacity
         )
         self.optimize_steps: int = 0
-        self.losses: List[float] = []
+        self.losses: list[float] = []
 
         self._cryptogen: SystemRandom = SystemRandom()
 
@@ -247,4 +274,10 @@ class DQN:
     def load_model(self, model_path: str):
         self.policy_net_train_state = restore_checkpoint(
             ckpt_dir=os.path.dirname(model_path), target=self.policy_net_train_state
+        )
+        # Reset step to 0, so LR scheduler works as expected
+        self.policy_net_train_state = self.policy_net_train_state.replace(step=0)
+        self.target_net_train_state = self.target_net_train_state.replace(
+            params=self.policy_net_train_state.params,
+            batch_stats=self.policy_net_train_state.batch_stats,
         )

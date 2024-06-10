@@ -5,7 +5,6 @@ import json
 import time
 from datetime import datetime
 from random import SystemRandom
-from typing import List
 
 import pygame
 
@@ -52,9 +51,9 @@ def main(show_board: bool, print_results: bool, output_prefix: str, max_iters: i
     cryptogen: SystemRandom = SystemRandom()
 
     keys = [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]
-    move_failures: List[int] = []
-    total_scores: List[int] = []
-    max_grids: List[int] = []
+    move_failures: list[int] = []
+    total_scores: list[int] = []
+    max_grids: list[int] = []
 
     move_failure = 0
     date_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")

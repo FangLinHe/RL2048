@@ -1,5 +1,5 @@
 from random import SystemRandom
-from typing import List, NamedTuple
+from typing import NamedTuple
 
 from rl_2048.common import Location
 from rl_2048.DQN.replay_memory import Action
@@ -328,8 +328,8 @@ class GameEngine:
         self.score += score
         return MoveResult(suc, score)
 
-    def _find_empty_grids(self) -> List[Location]:
-        empty_grids: List[Location] = []
+    def _find_empty_grids(self) -> list[Location]:
+        empty_grids: list[Location] = []
         for y, grid_row in enumerate(self.tile.grids):
             for x, grid in enumerate(grid_row):
                 if grid == 0:
@@ -338,7 +338,7 @@ class GameEngine:
         return empty_grids
 
     def generate_new(self) -> bool:
-        empty_grids: List[Location] = self._find_empty_grids()
+        empty_grids: list[Location] = self._find_empty_grids()
         if len(empty_grids) == 0:
             return False
 

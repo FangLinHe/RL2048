@@ -1,5 +1,3 @@
-from typing import List
-
 from rl_2048.tile import Tile
 
 
@@ -9,7 +7,7 @@ def test_tile():
         assert tile.height == 3 and len(tile.grids) == 3
         assert tile.width == 5 and all(len(row) == 5 for row in tile.grids)
 
-        non_zero_grids: List[int] = [g for row in tile.grids for g in row if g > 0]
+        non_zero_grids: list[int] = [g for row in tile.grids for g in row if g > 0]
         assert len(non_zero_grids) == tile.random_start_count
         assert all(g in {2, 4} for g in non_zero_grids)
         assert tile.max_grid() == max(non_zero_grids)
@@ -28,9 +26,9 @@ def test_tile_flattened():
         [0, 0, 2, 0, 2]
     ]
     # fmt: on
-    flattened: List[int] = tile.flattened()
+    flattened: list[int] = tile.flattened()
     # fmt: off
-    expected: List[int] = [
+    expected: list[int] = [
         0, 0, 2, 4, 0,
         4, 8, 0, 2, 0,
         0, 0, 2, 0, 2

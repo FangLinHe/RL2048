@@ -1,7 +1,7 @@
 from collections import defaultdict
 from copy import deepcopy
 from random import SystemRandom
-from typing import Dict, List, NamedTuple
+from typing import NamedTuple
 
 from rl_2048.common import Location
 
@@ -17,14 +17,14 @@ class Tile:
     def __init__(self, width: int = 4, height: int = 4):
         self.width: int = width
         self.height: int = height
-        self.grids: List[List[int]] = []
-        self.animation_grids: Dict[Location, List[MovingGrid]] = defaultdict(list)
+        self.grids: list[list[int]] = []
+        self.animation_grids: dict[Location, list[MovingGrid]] = defaultdict(list)
         self._cryptogen: SystemRandom = SystemRandom()
         self.random_start_count: int = 2
 
         self.random_start()
 
-    def flattened(self) -> List[int]:
+    def flattened(self) -> list[int]:
         return [g for row in self.grids for g in row]
 
     def __repr__(self) -> str:
@@ -36,7 +36,7 @@ class Tile:
             s += "\n" + "-" * (8 * self.width + 1) + "\n"
         return s
 
-    def set_grids(self, grids: List[List[int]]):
+    def set_grids(self, grids: list[list[int]]):
         if len(grids) != self.height:
             raise ValueError(
                 f"Wrong grids height, expected {self.height}, actual {len(grids)}"

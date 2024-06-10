@@ -1,4 +1,4 @@
-from typing import Dict, NamedTuple
+from typing import NamedTuple
 
 
 class Color(NamedTuple):
@@ -19,7 +19,7 @@ default_colorset = ColorSet(Color(128, 128, 128), light_foreground)
 win_background_color: Color = Color(185, 173, 161)
 info_board_color: Color = Color(249, 247, 237)
 
-color_palette: Dict[int, ColorSet] = {
+color_palette: dict[int, ColorSet] = {
     0: ColorSet(Color(202, 193, 181), dark_foreground),
     2: ColorSet(Color(236, 228, 219), dark_foreground),
     4: ColorSet(Color(236, 225, 204), dark_foreground),

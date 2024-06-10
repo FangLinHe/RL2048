@@ -1,7 +1,8 @@
 import random
 from collections import deque
+from collections.abc import Sequence
 from enum import Enum
-from typing import Deque, NamedTuple, Sequence
+from typing import NamedTuple
 
 import torch
 
@@ -36,11 +37,11 @@ class ReplayMemory:
     def __init__(self, capacity: int = 1024):
         self.capacity: int = capacity
 
-        self.states: Deque[Sequence[float]] = deque(maxlen=self.capacity)
-        self.actions: Deque[int] = deque(maxlen=self.capacity)
-        self.next_states: Deque[Sequence[float]] = deque(maxlen=self.capacity)
-        self.rewards: Deque[float] = deque(maxlen=self.capacity)
-        self.games_over: Deque[bool] = deque(maxlen=self.capacity)
+        self.states: deque[Sequence[float]] = deque(maxlen=self.capacity)
+        self.actions: deque[int] = deque(maxlen=self.capacity)
+        self.next_states: deque[Sequence[float]] = deque(maxlen=self.capacity)
+        self.rewards: deque[float] = deque(maxlen=self.capacity)
+        self.games_over: deque[bool] = deque(maxlen=self.capacity)
 
     def is_full(self) -> bool:
         return len(self) >= self.capacity

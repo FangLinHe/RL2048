@@ -1,6 +1,7 @@
 import random
+from collections.abc import Sequence
 from enum import Enum
-from typing import List, NamedTuple, Sequence
+from typing import NamedTuple
 
 import jax.numpy as jnp
 import jax.random as jrandom
@@ -39,11 +40,11 @@ class ReplayMemory:
         self.rng = rng
         self.capacity: int = capacity
 
-        self.states: List[Sequence[float]] = [[] for _ in range(capacity)]
-        self.actions: List[int] = [0 for _ in range(capacity)]
-        self.next_states: List[Sequence[float]] = [[] for _ in range(capacity)]
-        self.rewards: List[float] = [0.0 for _ in range(capacity)]
-        self.games_over: List[bool] = [False for _ in range(capacity)]
+        self.states: list[Sequence[float]] = [[] for _ in range(capacity)]
+        self.actions: list[int] = [0 for _ in range(capacity)]
+        self.next_states: list[Sequence[float]] = [[] for _ in range(capacity)]
+        self.rewards: list[float] = [0.0 for _ in range(capacity)]
+        self.games_over: list[bool] = [False for _ in range(capacity)]
         self.next_index: int = 0
         self.is_full: bool = False
 

@@ -1,4 +1,4 @@
-from typing import Sequence
+from collections.abc import Sequence
 
 from rl_2048.jax_dqn.utils import flat_one_hot
 

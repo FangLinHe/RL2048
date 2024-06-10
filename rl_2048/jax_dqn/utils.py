@@ -1,5 +1,5 @@
 import math
-from typing import Sequence
+from collections.abc import Sequence
 
 
 def flat_one_hot(values: Sequence[int], k: int) -> Sequence[float]:

@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -75,10 +75,10 @@ class Net(nn.Module):
         self,
         input_feature_size: int,
         output_feature_size: int,
-        hidden_layer_sizes: List[int],
+        hidden_layer_sizes: list[int],
         activation_layer: nn.Module,
         bias: bool = True,
-        residual_mid_feature_sizes: Optional[List[int]] = None,
+        residual_mid_feature_sizes: Optional[list[int]] = None,
     ):
         super(Net, self).__init__()
         if residual_mid_feature_sizes is None:
@@ -90,7 +90,7 @@ class Net(nn.Module):
                 f"({len(residual_mid_feature_sizes)})"
             )
         in_features = input_feature_size
-        layers: List[nn.Module] = []
+        layers: list[nn.Module] = []
 
         is_residual = len(residual_mid_feature_sizes) > 0
         for i, out_features in enumerate(hidden_layer_sizes):
