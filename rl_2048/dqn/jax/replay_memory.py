@@ -7,7 +7,7 @@ import jax.random as jrandom
 import numpy as np
 from jax import Array
 
-from rl_2048.dqn.common import Action
+from rl_2048.dqn.common import Action, Batch
 
 
 # N: number of grids in the board
@@ -19,14 +19,6 @@ class Transition(NamedTuple):
     next_state: Sequence[float]  # not really used in training
     reward: float
     game_over: bool
-
-
-class Batch(NamedTuple):
-    states: Array
-    actions: Array
-    next_states: Array
-    rewards: Array
-    games_over: Array
 
 
 class ReplayMemory:

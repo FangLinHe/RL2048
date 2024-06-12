@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import NamedTuple, Union
 
+from jaxtyping import Array
+
 
 class Action(Enum):
     UP = 0
@@ -32,6 +34,14 @@ class TrainingParameters(NamedTuple):
     tb_write_steps: int = 50
 
     pretrained_net_path: str = ""
+
+
+class Batch(NamedTuple):
+    states: Array
+    actions: Array
+    next_states: Array
+    rewards: Array
+    games_over: Array
 
 
 class PolicyNetOutput(NamedTuple):

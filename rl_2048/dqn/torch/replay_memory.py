@@ -5,7 +5,7 @@ from typing import NamedTuple
 
 import torch
 
-from rl_2048.dqn.common import Action
+from rl_2048.dqn.common import Action, Batch
 
 
 # N: number of grids in the board
@@ -17,14 +17,6 @@ class Transition(NamedTuple):
     next_state: Sequence[float]  # not really used in training
     reward: float
     game_over: bool
-
-
-class Batch(NamedTuple):
-    states: torch.Tensor
-    actions: torch.Tensor
-    next_states: torch.Tensor
-    rewards: torch.Tensor
-    games_over: torch.Tensor
 
 
 class ReplayMemory:
