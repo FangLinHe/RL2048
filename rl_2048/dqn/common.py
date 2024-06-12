@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import NamedTuple, Union
+from typing import Any, NamedTuple, Union
 
 from jaxtyping import Array
 
@@ -47,3 +47,6 @@ class Batch(NamedTuple):
 class PolicyNetOutput(NamedTuple):
     expected_value: float
     action: Action
+
+
+Metrics = dict[str, Any]
