@@ -34,13 +34,13 @@ class DQN:
             self.scheduler = optim.lr_scheduler.StepLR(
                 self.optimizer,
                 self.training_params.lr_decay_milestones,
-                self.training_params.gamma,
+                self.training_params.lr_gamma,
             )
         else:
             self.scheduler = optim.lr_scheduler.MultiStepLR(
                 self.optimizer,
                 self.training_params.lr_decay_milestones,
-                self.training_params.gamma,
+                self.training_params.lr_gamma,
             )
         self.memory = ReplayMemory(self.training_params.memory_capacity)
         self.optimize_steps: int = 0
@@ -139,8 +139,8 @@ class DQN:
 
 
 if __name__ == "__main__":
-    policy_net = Net(2, 4, [16], nn.ReLU())
-    target_net = Net(2, 4, [16], nn.ReLU())
+    policy_net = Net(2, 4, [16], nn.ReLU(), residual_mid_feature_sizes=[])
+    target_net = Net(2, 4, [16], nn.ReLU(), residual_mid_feature_sizes=[])
     training_params = TrainingParameters(
         memory_capacity=1024,
         gamma=0.99,
