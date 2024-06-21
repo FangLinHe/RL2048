@@ -6,11 +6,12 @@ from typing import Optional
 
 from rl_2048.dqn.common import (
     Action,
+    Batch,
     DQNParameters,
     Metrics,
 )
 from rl_2048.dqn.protocols import PolicyNet
-from rl_2048.dqn.torch.replay_memory import Batch, ReplayMemory, Transition
+from rl_2048.dqn.replay_memory import ReplayMemory, Transition
 
 
 @dataclass

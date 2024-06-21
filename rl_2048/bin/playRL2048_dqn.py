@@ -16,9 +16,9 @@ import torch
 from torch import nn
 
 from rl_2048.dqn.common import Action, DQNParameters, TrainingParameters
+from rl_2048.dqn.replay_memory import Transition
 from rl_2048.dqn.torch.dqn import DQN
 from rl_2048.dqn.torch.net import Net, TorchPolicyNet
-from rl_2048.dqn.torch.replay_memory import Transition
 from rl_2048.game_engine import GameEngine, MoveResult
 from rl_2048.tile import Tile
 from rl_2048.tile_plotter import PlotProperties, TilePlotter

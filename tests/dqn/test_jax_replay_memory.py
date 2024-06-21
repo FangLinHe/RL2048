@@ -1,9 +1,6 @@
-import jax.random as jrandom
-from jax import Array
-
 from rl_2048.dqn.common import Action
 from rl_2048.dqn.jax.net import JaxBatch, to_jax_batch
-from rl_2048.dqn.jax.replay_memory import ReplayMemory, Transition
+from rl_2048.dqn.replay_memory import ReplayMemory, Transition
 
 all_memory_fields = {"states", "actions", "next_states", "rewards", "games_over"}
 
@@ -14,10 +11,9 @@ def check_size(memory: ReplayMemory, expected_size: int):
 
 
 def test_replay_memory():
-    rng: Array = jrandom.key(0)
     capacity: int = 4
     state_size: int = 2
-    memory = ReplayMemory(rng, capacity)
+    memory = ReplayMemory(capacity)
     t1 = Transition(
         state=[1.0] + [0.0 for _ in range(state_size - 1)],
         action=Action.UP,

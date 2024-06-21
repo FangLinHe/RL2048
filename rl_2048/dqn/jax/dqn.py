@@ -27,7 +27,7 @@ from rl_2048.dqn.jax.net import (
     to_jax_batch,
     train_step,
 )
-from rl_2048.dqn.jax.replay_memory import Batch, ReplayMemory, Transition
+from rl_2048.dqn.replay_memory import Batch, ReplayMemory, Transition
 
 
 def create_learning_rate_fn(training_params: TrainingParameters) -> optax.Schedule:
@@ -125,7 +125,7 @@ class DQN:
 
         self.training_params = training_params
         self.optax_loss_fn = getattr(optax, training_params.loss_fn)
-        self.memory = ReplayMemory(self.random_key, dqn_params.memory_capacity)
+        self.memory = ReplayMemory(dqn_params.memory_capacity)
         self.optimize_steps: int = 0
         self.losses: list[float] = []
 

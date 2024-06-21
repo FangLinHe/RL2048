@@ -17,7 +17,7 @@ from rl_2048.dqn.jax.net import (
     load_predefined_net,
     train_step,
 )
-from rl_2048.dqn.jax.replay_memory import Transition
+from rl_2048.dqn.replay_memory import Transition
 
 
 def test_dqn():
