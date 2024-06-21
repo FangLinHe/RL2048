@@ -3,8 +3,6 @@ from collections import deque
 from collections.abc import Sequence
 from typing import NamedTuple
 
-import torch
-
 from rl_2048.dqn.common import Action, Batch
 
 
@@ -49,15 +47,11 @@ class ReplayMemory:
     def sample(self, batch_size: int) -> Batch:
         random_indices = random.sample(list(range(len(self))), batch_size)
         batch = Batch(
-            torch.tensor([self.states[i] for i in random_indices]),
-            torch.tensor(
-                [self.actions[i] for i in random_indices], dtype=torch.int64
-            ).view((-1, 1)),
-            torch.tensor([self.next_states[i] for i in random_indices]),
-            torch.tensor([self.rewards[i] for i in random_indices]).view((-1, 1)),
-            torch.tensor(
-                [self.games_over[i] for i in random_indices], dtype=torch.bool
-            ).view((-1, 1)),
+            [self.states[i] for i in random_indices],
+            [self.actions[i] for i in random_indices],
+            [self.next_states[i] for i in random_indices],
+            [self.rewards[i] for i in random_indices],
+            [self.games_over[i] for i in random_indices],
         )
         return batch
 

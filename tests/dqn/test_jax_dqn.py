@@ -7,23 +7,24 @@ from jax import Array
 from jax import random as jrandom
 from optax import Schedule
 
-from rl_2048.dqn.common import Action
+from rl_2048.dqn.common import Action, DQNParameters
 from rl_2048.dqn.jax.dqn import DQN, TrainingParameters, create_learning_rate_fn
 from rl_2048.dqn.jax.net import (
     PREDEFINED_NETWORKS,
+    JaxBatch,
     Net,
     create_train_state,
     load_predefined_net,
     train_step,
 )
-from rl_2048.dqn.jax.replay_memory import Batch, Transition
+from rl_2048.dqn.jax.replay_memory import Transition
 
 
 def test_dqn():
     input_dim = 100
     output_dim = 4
+    dqn_params = DQNParameters(memory_capacity=4, batch_size=2)
     training_params = TrainingParameters(
-        memory_capacity=2,
         gamma=0.99,
         batch_size=2,
         lr=0.001,
@@ -51,7 +52,7 @@ def test_dqn():
         policy_net.check_correctness()
 
         with tempfile.TemporaryDirectory() as tmp_dir:
-            dqn = DQN(input_dim, policy_net, tmp_dir, training_params, rng)
+            dqn = DQN(input_dim, policy_net, tmp_dir, dqn_params, training_params, rng)
 
             dqn.push_transition(t1)
             dqn.push_transition(t2)
@@ -119,7 +120,7 @@ def test_train_step_lr():
         optimizer_str,
         lr_fn,
     )
-    batch = Batch(
+    batch = JaxBatch(
         states=jrandom.uniform(rng, (4, input_dim)),
         actions=jrandom.randint(rng, (4, 1), 0, 4),
         next_states=jrandom.uniform(rng, (4, input_dim)),

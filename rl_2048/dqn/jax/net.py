@@ -1,9 +1,10 @@
 import functools
 from collections.abc import Mapping
-from typing import Any, Callable, Union
+from typing import Any, Callable, NamedTuple, Union
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 import optax
 from flax import linen as nn
 from flax.core import FrozenDict
@@ -127,10 +128,28 @@ def create_train_state(
     )
 
 
+class JaxBatch(NamedTuple):
+    states: Array
+    actions: Array
+    next_states: Array
+    rewards: Array
+    games_over: Array
+
+
+def to_jax_batch(batch: Batch) -> JaxBatch:
+    return JaxBatch(
+        states=jnp.array(np.array(batch.states)),
+        actions=jnp.array(np.array(batch.actions)).reshape((-1, 1)),
+        next_states=jnp.array(np.array(batch.next_states)),
+        rewards=jnp.array(np.array(batch.rewards)).reshape((-1, 1)),
+        games_over=jnp.array(np.array(batch.games_over)).reshape((-1, 1)),
+    )
+
+
 @functools.partial(jax.jit, static_argnums=(3, 4))
 def train_step(
     train_state: BNTrainState,
-    input_batch: Batch,
+    input_batch: JaxBatch,
     targets: Array,
     learning_rate_fn: optax.Schedule,
     optax_loss_fn: Callable,

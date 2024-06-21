@@ -15,9 +15,9 @@ import pygame
 import torch
 from torch import nn
 
-from rl_2048.dqn.common import Action
-from rl_2048.dqn.torch.dqn import DQN, TrainingParameters
-from rl_2048.dqn.torch.net import Net
+from rl_2048.dqn.common import Action, DQNParameters, TrainingParameters
+from rl_2048.dqn.torch.dqn import DQN
+from rl_2048.dqn.torch.net import Net, TorchPolicyNet
 from rl_2048.dqn.torch.replay_memory import Transition
 from rl_2048.game_engine import GameEngine, MoveResult
 from rl_2048.tile import Tile
@@ -183,16 +183,12 @@ def train(
     # DQN part
     in_features: int = tile.width * tile.height * 16
     out_features: int = len(Action)
-    policy_net, target_net = load_nets(
-        network_version,
-        in_features,
-        out_features,
-    )
-    if pretrained_net_path != "":
-        policy_net.load_state_dict(torch.load(pretrained_net_path))
 
-    training_params = TrainingParameters(
+    dqn_parameters = DQNParameters(
         memory_capacity=20000,
+        batch_size=128,
+    )
+    training_params = TrainingParameters(
         gamma=0.99,
         batch_size=128,
         lr=5e-3,
@@ -207,13 +203,19 @@ def train(
     )
     reward_norm_factor: int = 256  # reward / reward_norm_factor for value function
 
+    policy_net = TorchPolicyNet(
+        network_version, in_features, out_features, training_params
+    )
+    if pretrained_net_path != "":
+        policy_net.load(pretrained_net_path)
+
     move_failure = 0
     date_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_json_fn = f"{output_json_prefix}_{date_time_str}.json"
     output_net_dir = f"{output_net_prefix}/{date_time_str}"
     os.makedirs(output_net_dir)
 
-    dqn = DQN(policy_net, target_net, output_net_dir, training_params)
+    dqn = DQN(policy_net, dqn_parameters, output_net_dir)
 
     iter = 0
     start_time = time.time()
@@ -364,6 +366,7 @@ def eval_dqn(
 
     prev_score: int = game_engine.score
     score_not_increasing_count: int = 0
+    dqn = DQN(policy_net, None, None)
     while max_iters < 0 or iter < max_iters:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -376,9 +379,8 @@ def eval_dqn(
 
         if not game_engine.game_is_over:
             start_inf_time = time.time()
-            policy_net_output = DQN.infer_action(policy_net, cur_state)
+            action: Action = dqn.get_best_action(cur_state)
             inf_times.append(time.time() - start_inf_time)
-            action: Action = policy_net_output.action
 
             move_result: MoveResult = game_engine.move(action)
             if move_result.suc:

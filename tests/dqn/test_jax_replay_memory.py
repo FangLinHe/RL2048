@@ -2,7 +2,8 @@ import jax.random as jrandom
 from jax import Array
 
 from rl_2048.dqn.common import Action
-from rl_2048.dqn.jax.replay_memory import Batch, ReplayMemory, Transition
+from rl_2048.dqn.jax.net import JaxBatch, to_jax_batch
+from rl_2048.dqn.jax.replay_memory import ReplayMemory, Transition
 
 all_memory_fields = {"states", "actions", "next_states", "rewards", "games_over"}
 
@@ -64,7 +65,7 @@ def test_replay_memory():
     assert memory.next_index == 0
 
     sample_size: int = 3
-    batch: Batch = memory.sample(sample_size)
+    batch: JaxBatch = to_jax_batch(memory.sample(sample_size))
     expected_shapes = {
         f: (sample_size, (state_size if "states" in f else 1)) for f in batch._fields
     }

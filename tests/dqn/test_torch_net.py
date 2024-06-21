@@ -47,11 +47,11 @@ def feature_size() -> int:
 @pytest.fixture
 def batch(batch_size: int, feature_size: int):
     return Batch(
-        states=torch.rand((batch_size, feature_size)),
-        actions=torch.randint(0, 4, (batch_size, 1)),
-        next_states=torch.rand((batch_size, feature_size)),
-        rewards=torch.rand((batch_size, 1)),
-        games_over=torch.randint(0, 2, (batch_size, 1), dtype=torch.bool),
+        states=torch.rand((batch_size, feature_size)).tolist(),
+        actions=torch.randint(0, 4, (batch_size,)).tolist(),
+        next_states=torch.rand((batch_size, feature_size)).tolist(),
+        rewards=torch.rand((batch_size,)).tolist(),
+        games_over=torch.randint(0, 2, (batch_size,), dtype=torch.bool).tolist(),
     )
 
 
@@ -61,6 +61,7 @@ def test_policy_net_predefined(batch):
     for network_name in PREDEFINED_NETWORKS:
         training_parameters = TrainingParameters(loss_fn="HuberLoss")
         policy_net = TorchPolicyNet(network_name, 16, 4, training_parameters)
+        policy_net.optimize(batch)
         _ = policy_net.predict(torch.rand((16,)).tolist())
 
 

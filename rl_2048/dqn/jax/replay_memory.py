@@ -2,9 +2,7 @@ import random
 from collections.abc import Sequence
 from typing import NamedTuple
 
-import jax.numpy as jnp
 import jax.random as jrandom
-import numpy as np
 from jax import Array
 
 from rl_2048.dqn.common import Action, Batch
@@ -56,22 +54,29 @@ class ReplayMemory:
 
     def sample(self, batch_size: int) -> Batch:
         random_indices = random.sample(list(range(len(self))), batch_size)
+        # batch = Batch(
+        #     jnp.array(np.array([self.states[i] for i in random_indices])),
+        #     jnp.array(
+        #         np.array([self.actions[i] for i in random_indices]).reshape((-1, 1))
+        #     ),
+        #     jnp.array(
+        #         np.array([self.next_states[i] for i in random_indices]),
+        #     ),
+        #     jnp.array(
+        #         np.array([self.rewards[i] for i in random_indices]).reshape((-1, 1))
+        #     ),
+        #     jnp.array(
+        #         np.array([float(self.games_over[i]) for i in random_indices]).reshape(
+        #             (-1, 1)
+        #         )
+        #     ),
+        # )
         batch = Batch(
-            jnp.array(np.array([self.states[i] for i in random_indices])),
-            jnp.array(
-                np.array([self.actions[i] for i in random_indices]).reshape((-1, 1))
-            ),
-            jnp.array(
-                np.array([self.next_states[i] for i in random_indices]),
-            ),
-            jnp.array(
-                np.array([self.rewards[i] for i in random_indices]).reshape((-1, 1))
-            ),
-            jnp.array(
-                np.array([float(self.games_over[i]) for i in random_indices]).reshape(
-                    (-1, 1)
-                )
-            ),
+            [self.states[i] for i in random_indices],
+            [self.actions[i] for i in random_indices],
+            [self.next_states[i] for i in random_indices],
+            [self.rewards[i] for i in random_indices],
+            [self.games_over[i] for i in random_indices],
         )
 
         return batch

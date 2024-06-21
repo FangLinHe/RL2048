@@ -13,11 +13,18 @@ from jax import Array
 from jax.tree_util import tree_map
 from tensorboardX import SummaryWriter
 
-from rl_2048.dqn.common import Action, PolicyNetOutput, TrainingParameters
+from rl_2048.dqn.common import (
+    Action,
+    DQNParameters,
+    PolicyNetOutput,
+    TrainingParameters,
+)
 from rl_2048.dqn.jax.net import (
     BNTrainState,
+    JaxBatch,
     create_train_state,
     eval_forward,
+    to_jax_batch,
     train_step,
 )
 from rl_2048.dqn.jax.replay_memory import Batch, ReplayMemory, Transition
@@ -75,6 +82,7 @@ class DQN:
         input_dim: int,
         policy_net: nn.Module,
         output_net_dir: str,
+        dqn_params: DQNParameters,
         training_params: TrainingParameters,
         random_key: Array,
     ):
@@ -117,9 +125,7 @@ class DQN:
 
         self.training_params = training_params
         self.optax_loss_fn = getattr(optax, training_params.loss_fn)
-        self.memory = ReplayMemory(
-            self.random_key, self.training_params.memory_capacity
-        )
+        self.memory = ReplayMemory(self.random_key, dqn_params.memory_capacity)
         self.optimize_steps: int = 0
         self.losses: list[float] = []
 
@@ -181,16 +187,18 @@ class DQN:
         batch: Batch = self.memory.sample(
             min(self.training_params.batch_size, len(self.memory))
         )
+        jax_batch: JaxBatch = to_jax_batch(batch)
+
         next_value_predictions = eval_forward(
-            self.target_net_train_state, batch.next_states
+            self.target_net_train_state, jax_batch.next_states
         )
         next_state_values = next_value_predictions.max(axis=1, keepdims=True)
-        expected_state_action_values: Array = batch.rewards + (
+        expected_state_action_values: Array = jax_batch.rewards + (
             self.training_params.gamma * next_state_values
-        ) * (1.0 - batch.games_over)
+        ) * (1.0 - jax_batch.games_over)
         self.policy_net_train_state, loss, lr = train_step(
             self.policy_net_train_state,
-            batch,
+            jax_batch,
             expected_state_action_values,
             self.lr_scheduler,
             self.optax_loss_fn,

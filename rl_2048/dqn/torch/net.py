@@ -1,8 +1,8 @@
-from typing import Union
+from collections.abc import Iterable, Sequence
+from typing import Optional, Union
 
 import torch
 import torch.nn as nn
-from jaxtyping import Array
 
 from rl_2048.dqn.common import (
     Action,
@@ -117,10 +117,10 @@ PREDEFINED_NETWORKS: set[str] = {
 }
 
 
-class TorchPolicyNet:
-    policy_net: Net
-    target_net: Net
-    training_params: TrainingParameters
+class TrainingElements:
+    """Class for keeping track of training variables"""
+
+    params: TrainingParameters
     loss_fn: nn.Module
     optimizer: torch.optim.Optimizer
     scheduler: torch.optim.lr_scheduler.LRScheduler
@@ -128,25 +128,92 @@ class TorchPolicyNet:
 
     def __init__(
         self,
+        net_params: Iterable[nn.parameter.Parameter],
+        training_params: TrainingParameters,
+    ):
+        self.params = training_params
+        self.loss_fn = getattr(nn, self.params.loss_fn)()
+        self.optimizer = torch.optim.AdamW(net_params, self.params.lr, amsgrad=True)
+        self.scheduler = self._load_lr_scheduler(
+            self.params.lr_decay_milestones,
+            self.params.lr_gamma,
+        )
+        self.step_count = 0
+
+    def _load_lr_scheduler(
+        self,
+        lr_decay_milestones: Union[int, list[int]],
+        lr_gamma: Union[float, list[float]],
+    ) -> torch.optim.lr_scheduler.LRScheduler:
+        def gamma_fn(step: int):
+            if step in boundaries_and_scales:
+                return boundaries_and_scales[step]
+            return 1.0
+
+        scheduler: torch.optim.lr_scheduler.LRScheduler
+        # decay LR by gamma after every N steps
+        if isinstance(lr_decay_milestones, int):
+            if not isinstance(lr_gamma, float):
+                raise ValueError(
+                    "Type of `lr_gamma` should be float, but got " f"{type(lr_gamma)}."
+                )
+            scheduler = torch.optim.lr_scheduler.StepLR(
+                self.optimizer,
+                lr_decay_milestones,
+                lr_gamma,
+            )
+        elif len(lr_decay_milestones) > 0:
+            # decay LR by gamma after each milestone
+            if isinstance(lr_gamma, float):
+                scheduler = torch.optim.lr_scheduler.MultiStepLR(
+                    self.optimizer,
+                    lr_decay_milestones,
+                    lr_gamma,
+                )
+            else:  # lr_gamma is a list
+                gamma_len = len(lr_gamma)
+                decay_len = len(lr_decay_milestones)
+                if gamma_len != decay_len:
+                    raise ValueError(
+                        f"Lengths of `lr_gamma` ({gamma_len}) should be the same as "
+                        f"`lr_decay_milestones` ({decay_len})"
+                    )
+                boundaries_and_scales = {
+                    step: gamma for step, gamma in zip(lr_decay_milestones, lr_gamma)
+                }
+                scheduler = torch.optim.lr_scheduler.MultiplicativeLR(
+                    self.optimizer,
+                    gamma_fn,
+                )
+        else:
+            scheduler = torch.optim.lr_scheduler.ConstantLR(self.optimizer, factor=1.0)
+
+        return scheduler
+
+
+class TorchPolicyNet:
+    policy_net: Net
+    target_net: Net
+    training: Optional[TrainingElements]
+
+    def __init__(
+        self,
         network_version: str,
         in_features: int,
         out_features: int,
-        training_params: TrainingParameters,
+        training_params: Optional[TrainingParameters] = None,
     ):
         self.policy_net, self.target_net = self._load_nets(
             network_version, in_features, out_features
         )
-        self.training_params = training_params
-        self.loss_fn = getattr(nn, training_params.loss_fn)()
-        self.optimizer = torch.optim.AdamW(
-            self.policy_net.parameters(), training_params.lr, amsgrad=True
-        )
-        self.scheduler = self._load_lr_scheduler(
-            training_params.lr,
-            training_params.lr_decay_milestones,
-            training_params.lr_gamma,
-        )
-        self.step_count = 0
+        self.target_net.load_state_dict(self.policy_net.state_dict())
+
+        if training_params is None:
+            self.training = None
+        else:
+            self.training = TrainingElements(
+                self.policy_net.parameters(), training_params
+            )
 
     def _load_nets(
         self, network_version: str, in_features: int, out_features: int
@@ -186,58 +253,7 @@ class TorchPolicyNet:
         )
         return (policy_net, target_net)
 
-    def _load_lr_scheduler(
-        self,
-        lr: float,
-        lr_decay_milestones: Union[int, list[int]],
-        lr_gamma: Union[float, list[float]],
-    ) -> torch.optim.lr_scheduler.LRScheduler:
-        def gamma_fn(step: int):
-            if step in boundaries_and_scales:
-                return boundaries_and_scales[step]
-            return 1.0
-
-        scheduler = torch.optim.lr_scheduler.LRScheduler
-        # decay LR by gamma after every N steps
-        if isinstance(lr_decay_milestones, int):
-            if not isinstance(lr_gamma, float):
-                raise ValueError(
-                    "Type of `lr_gamma` should be float, but got " f"{type(lr_gamma)}."
-                )
-            scheduler = torch.optim.lr_scheduler.StepLR(
-                self.optimizer,
-                lr_decay_milestones,
-                lr_gamma,
-            )
-        elif len(lr_decay_milestones) > 0:
-            # decay LR by gamma after each milestone
-            if isinstance(lr_gamma, float):
-                scheduler = torch.optim.lr_scheduler.MultiStepLR(
-                    self.optimizer,
-                    self.training_params.lr_decay_milestones,
-                    self.training_params.lr_gamma,
-                )
-            else:  # lr_gamma is a list
-                gamma_len = len(lr_gamma)
-                decay_len = len(lr_decay_milestones)
-                if gamma_len != decay_len:
-                    raise ValueError(
-                        f"Lengths of `lr_gamma` ({gamma_len}) should be the same as "
-                        f"`lr_decay_milestones` ({decay_len})"
-                    )
-                boundaries_and_scales = {
-                    step: gamma for step, gamma in zip(lr_decay_milestones, lr_gamma)
-                }
-                scheduler = torch.optim.lr_scheduler.MultiplicativeLR(
-                    self.optimizer,
-                    gamma_fn,
-                )
-        else:
-            scheduler = torch.optim.lr_scheduler.ConstantLR(self.optimizer, factor=1.0)
-
-        return scheduler
-
-    def predict(self, feature: Array) -> PolicyNetOutput:
+    def predict(self, feature: Sequence[float]) -> PolicyNetOutput:
         """Predict best action given a feature array.
 
         Args:
@@ -254,51 +270,79 @@ class TorchPolicyNet:
         return PolicyNetOutput(best_value.item(), Action(best_action.item()))
 
     def optimize(self, batch: Batch) -> Metrics:
-        def compute_loss() -> torch.Tensor:
-            state_action_values = self.policy_net(batch.states).gather(1, batch.actions)
+        def error_msg() -> str:
+            return (
+                "TorchPolicyNet is not initailized with training_params. "
+                "This function is not supported."
+            )
+
+        def compute_loss(training: TrainingElements) -> torch.Tensor:
+            states: torch.Tensor = torch.tensor(batch.states)
+            actions: torch.Tensor = torch.tensor(batch.actions, dtype=torch.int64).view(
+                (-1, 1)
+            )
+            next_states: torch.Tensor = torch.tensor(batch.next_states)
+            rewards: torch.Tensor = torch.tensor(batch.rewards).view((-1, 1))
+            games_over: torch.Tensor = torch.tensor(
+                batch.games_over, dtype=torch.bool
+            ).view((-1, 1))
+
+            state_action_values = self.policy_net(states).gather(1, actions)
             with torch.no_grad():
                 next_state_values = (
-                    self.target_net(batch.next_states).max(1).values.view((-1, 1))
+                    self.target_net(next_states).max(1).values.view((-1, 1))
                 )
 
-            expected_state_action_values: torch.Tensor = batch.rewards + (
-                self.training_params.gamma * next_state_values
-            ) * batch.games_over.logical_not().type_as(batch.rewards)
-            loss: torch.Tensor = self.loss_fn(
+            gamma = training.params.gamma
+            expected_state_action_values: torch.Tensor = rewards + (
+                gamma * next_state_values
+            ) * games_over.logical_not().type_as(rewards)
+            loss: torch.Tensor = training.loss_fn(
                 state_action_values, expected_state_action_values
             )
 
             return loss
 
-        def optimize_step(loss: torch.Tensor):
-            self.optimizer.zero_grad()
+        def optimize_step(training: TrainingElements, loss: torch.Tensor):
+            training.optimizer.zero_grad()
             loss.backward()
             # In-place gradient clipping
             torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 1.0)
-            self.optimizer.step()
-            self.scheduler.step()
-            self.step_count += 1
+            training.optimizer.step()
+            training.scheduler.step()
+            training.step_count += 1
 
-        def soft_update():
+        def soft_update(training: TrainingElements):
             """Soft update of the target network's weights
 
             θ′ ← τ θ + (1 −τ )θ′
             """
+
+            tau = training.params.TAU
             target_net_state_dict = self.target_net.state_dict()
             policy_net_state_dict = self.policy_net.state_dict()
             for key in policy_net_state_dict:
                 target_net_state_dict[key] = policy_net_state_dict[
                     key
-                ] * self.training_params.TAU + target_net_state_dict[key] * (
-                    1 - self.training_params.TAU
-                )
+                ] * tau + target_net_state_dict[key] * (1 - tau)
             self.target_net.load_state_dict(target_net_state_dict)
 
-        step: int = self.step_count
-        lr: float = self.scheduler.get_last_lr()[0]
+        if self.training is None:
+            raise ValueError(error_msg())
 
-        loss: torch.Tensor = compute_loss()
-        optimize_step(loss)
-        soft_update()
+        step: int = self.training.step_count
+        lr: float = self.training.scheduler.get_last_lr()[0]
+
+        loss: torch.Tensor = compute_loss(self.training)
+        optimize_step(self.training, loss)
+        soft_update(self.training)
 
         return {"loss": loss.item(), "step": step, "lr": lr}
+
+    def save(self, filename_prefix: str = "policy_net") -> str:
+        save_path: str = f"{filename_prefix}.pth"
+        torch.save(self.policy_net.state_dict(), save_path)
+        return save_path
+
+    def load(self, model_path: str):
+        self.policy_net.load_state_dict(torch.load(model_path))

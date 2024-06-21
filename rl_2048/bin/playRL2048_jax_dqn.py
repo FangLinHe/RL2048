@@ -17,7 +17,7 @@ from flax.training.checkpoints import PyTree, restore_checkpoint
 from jax import Array
 from jax import random as jrandom
 
-from rl_2048.dqn.common import Action
+from rl_2048.dqn.common import Action, DQNParameters
 from rl_2048.dqn.jax.dqn import (
     DQN,
     TrainingParameters,
@@ -295,8 +295,14 @@ def train(
         out_features,
     )
 
-    training_params = TrainingParameters(
+    dqn_parameters = DQNParameters(
         memory_capacity=20000,
+        batch_size=128,
+        eps_start=0.9,
+        eps_end=0.05,
+        eps_decay=10000,
+    )
+    training_params = TrainingParameters(
         gamma=0.99,
         batch_size=128,
         optimizer="adamw",
@@ -324,7 +330,9 @@ def train(
     )
     os.makedirs(output_net_dir)
 
-    dqn = DQN(in_features, policy_net, output_net_dir, training_params, rng)
+    dqn = DQN(
+        in_features, policy_net, output_net_dir, dqn_parameters, training_params, rng
+    )
     if pretrained_net_path != "":
         dqn.load_model(pretrained_net_path)
 
