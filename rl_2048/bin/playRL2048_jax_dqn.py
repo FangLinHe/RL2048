@@ -22,7 +22,7 @@ from rl_2048.dqn.jax.dqn import (
     DQN,
     TrainingParameters,
 )
-from rl_2048.dqn.jax.net import PREDEFINED_NETWORKS, load_predefined_net
+from rl_2048.dqn.jax.net import PREDEFINED_NETWORKS, _load_predefined_net
 from rl_2048.dqn.jax.utils import flat_one_hot
 from rl_2048.dqn.replay_memory import Transition
 from rl_2048.game_engine import GameEngine, MoveResult
@@ -129,7 +129,7 @@ def eval_dqn(
 
     # DQN part
     out_features: int = len(Action)
-    policy_net = load_predefined_net(
+    policy_net = _load_predefined_net(
         network_version,
         out_features,
     )
@@ -290,7 +290,7 @@ def train(
     # DQN part
     in_features: int = tile.width * tile.height * 16
     out_features: int = len(Action)
-    policy_net = load_predefined_net(
+    policy_net = _load_predefined_net(
         network_version,
         out_features,
     )

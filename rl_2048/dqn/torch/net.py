@@ -120,25 +120,21 @@ PREDEFINED_NETWORKS: set[str] = {
 class TrainingElements:
     """Class for keeping track of training variables"""
 
-    params: TrainingParameters
-    loss_fn: nn.Module
-    optimizer: torch.optim.Optimizer
-    scheduler: torch.optim.lr_scheduler.LRScheduler
-    step_count: int
-
     def __init__(
         self,
         net_params: Iterable[nn.parameter.Parameter],
         training_params: TrainingParameters,
     ):
-        self.params = training_params
-        self.loss_fn = getattr(nn, self.params.loss_fn)()
-        self.optimizer = torch.optim.AdamW(net_params, self.params.lr, amsgrad=True)
-        self.scheduler = self._load_lr_scheduler(
+        self.params: TrainingParameters = training_params
+        self.loss_fn: nn.Module = getattr(nn, self.params.loss_fn)()
+        self.optimizer: torch.optim.Optimizer = torch.optim.AdamW(
+            net_params, self.params.lr, amsgrad=True
+        )
+        self.scheduler: torch.optim.lr_scheduler.LRScheduler = self._load_lr_scheduler(
             self.params.lr_decay_milestones,
             self.params.lr_gamma,
         )
-        self.step_count = 0
+        self.step_count: int = 0
 
     def _load_lr_scheduler(
         self,
@@ -191,7 +187,50 @@ class TrainingElements:
         return scheduler
 
 
+def load_nets(
+    network_version: str, in_features: int, out_features: int
+) -> tuple[Net, Net]:
+    hidden_layers: list[int]
+    residual_mid_feature_sizes: list[int]
+    if network_version == "layers_1024_512_256":
+        hidden_layers = [1024, 512, 256]
+        residual_mid_feature_sizes = []
+    elif network_version == "layers_512_512_residual_0_128":
+        hidden_layers = [512, 512]
+        residual_mid_feature_sizes = [0, 128]
+    elif network_version == "layers_512_256_128_residual_0_64_32":
+        hidden_layers = [512, 256, 128]
+        residual_mid_feature_sizes = [0, 64, 32]
+    elif network_version == "layers_512_256_256_residual_0_128_128":
+        hidden_layers = [512, 256, 256]
+        residual_mid_feature_sizes = [0, 128, 128]
+    else:
+        raise NameError(
+            f"Network version {network_version} not in {PREDEFINED_NETWORKS}."
+        )
+
+    policy_net = Net(
+        in_features,
+        out_features,
+        hidden_layers,
+        nn.ReLU(),
+        residual_mid_feature_sizes=residual_mid_feature_sizes,
+    )
+    target_net = Net(
+        in_features,
+        out_features,
+        hidden_layers,
+        nn.ReLU(),
+        residual_mid_feature_sizes=residual_mid_feature_sizes,
+    )
+    return (policy_net, target_net)
+
+
 class TorchPolicyNet:
+    """
+    Implements protocal `PolicyNet` with PyTorch (see rl_2048/dqn/protocols.py)
+    """
+
     policy_net: Net
     target_net: Net
     training: Optional[TrainingElements]
@@ -203,7 +242,7 @@ class TorchPolicyNet:
         out_features: int,
         training_params: Optional[TrainingParameters] = None,
     ):
-        self.policy_net, self.target_net = self._load_nets(
+        self.policy_net, self.target_net = load_nets(
             network_version, in_features, out_features
         )
         self.target_net.load_state_dict(self.policy_net.state_dict())
@@ -214,44 +253,6 @@ class TorchPolicyNet:
             self.training = TrainingElements(
                 self.policy_net.parameters(), training_params
             )
-
-    def _load_nets(
-        self, network_version: str, in_features: int, out_features: int
-    ) -> tuple[Net, Net]:
-        hidden_layers: list[int]
-        residual_mid_feature_sizes: list[int]
-        if network_version == "layers_1024_512_256":
-            hidden_layers = [1024, 512, 256]
-            residual_mid_feature_sizes = []
-        elif network_version == "layers_512_512_residual_0_128":
-            hidden_layers = [512, 512]
-            residual_mid_feature_sizes = [0, 128]
-        elif network_version == "layers_512_256_128_residual_0_64_32":
-            hidden_layers = [512, 256, 128]
-            residual_mid_feature_sizes = [0, 64, 32]
-        elif network_version == "layers_512_256_256_residual_0_128_128":
-            hidden_layers = [512, 256, 256]
-            residual_mid_feature_sizes = [0, 128, 128]
-        else:
-            raise NameError(
-                f"Network version {network_version} not in {PREDEFINED_NETWORKS}."
-            )
-
-        policy_net = Net(
-            in_features,
-            out_features,
-            hidden_layers,
-            nn.ReLU(),
-            residual_mid_feature_sizes=residual_mid_feature_sizes,
-        )
-        target_net = Net(
-            in_features,
-            out_features,
-            hidden_layers,
-            nn.ReLU(),
-            residual_mid_feature_sizes=residual_mid_feature_sizes,
-        )
-        return (policy_net, target_net)
 
     def predict(self, feature: Sequence[float]) -> PolicyNetOutput:
         """Predict best action given a feature array.

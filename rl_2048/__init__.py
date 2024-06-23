@@ -2,7 +2,7 @@
 
 __version__ = "0.0.0"
 
-from rl_2048.dqn.torch.dqn import DQN
+from rl_2048.dqn import DQN
 from rl_2048.dqn.torch.net import Net
 from rl_2048.game_engine import GameEngine
 from rl_2048.tile import Tile

@@ -15,9 +15,9 @@ import pygame
 import torch
 from torch import nn
 
+from rl_2048.dqn import DQN
 from rl_2048.dqn.common import Action, DQNParameters, TrainingParameters
 from rl_2048.dqn.replay_memory import Transition
-from rl_2048.dqn.torch.dqn import DQN
 from rl_2048.dqn.torch.net import Net, TorchPolicyNet
 from rl_2048.game_engine import GameEngine, MoveResult
 from rl_2048.tile import Tile
@@ -379,7 +379,7 @@ def eval_dqn(
 
         if not game_engine.game_is_over:
             start_inf_time = time.time()
-            action: Action = dqn.get_best_action(cur_state)
+            action: Action = dqn.predict(cur_state).action
             inf_times.append(time.time() - start_inf_time)
 
             move_result: MoveResult = game_engine.move(action)

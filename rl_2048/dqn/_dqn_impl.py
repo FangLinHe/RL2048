@@ -9,6 +9,7 @@ from rl_2048.dqn.common import (
     Batch,
     DQNParameters,
     Metrics,
+    PolicyNetOutput,
 )
 from rl_2048.dqn.protocols import PolicyNet
 from rl_2048.dqn.replay_memory import ReplayMemory, Transition
@@ -22,19 +23,16 @@ class TrainingElements:
 
 
 class DQN:
-    policy_net: PolicyNet
-    output_net_dir: Optional[str]
-    training: Optional[TrainingElements]
-
     def __init__(
         self,
         policy_net: PolicyNet,
         dqn_parameters: Optional[DQNParameters] = None,
         output_net_dir: Optional[str] = None,
     ):
-        self.policy_net = policy_net
-        self.output_net_dir = output_net_dir
+        self.policy_net: PolicyNet = policy_net
+        self.output_net_dir: Optional[str] = output_net_dir
 
+        self.training: Optional[TrainingElements]
         if dqn_parameters is None:
             self.output_net_dir = None
             self.training = None
@@ -51,8 +49,8 @@ class DQN:
 
         self._cryptogen: SystemRandom = SystemRandom()
 
-    def get_best_action(self, state: Sequence[float]) -> Action:
-        return self.policy_net.predict(state).action
+    def predict(self, state: Sequence[float]) -> PolicyNetOutput:
+        return self.policy_net.predict(state)
 
     def _training_none_error_msg(self) -> str:
         return (
@@ -71,7 +69,7 @@ class DQN:
         )
 
         if self._cryptogen.random() > eps_threshold:
-            return self.get_best_action(state)
+            return self.predict(state).action
 
         return Action(self._cryptogen.randrange(len(Action)))
 

@@ -22,58 +22,13 @@ from rl_2048.dqn.common import (
 from rl_2048.dqn.jax.net import (
     BNTrainState,
     JaxBatch,
+    _create_lr_scheduler,
     create_train_state,
     eval_forward,
     to_jax_batch,
     train_step,
 )
 from rl_2048.dqn.replay_memory import Batch, ReplayMemory, Transition
-
-
-def create_learning_rate_fn(training_params: TrainingParameters) -> optax.Schedule:
-    """Creates learning rate schedule."""
-    lr_scheduler_fn: optax.Schedule
-    if isinstance(training_params.lr_decay_milestones, int):
-        if not isinstance(training_params.lr_gamma, float):
-            raise ValueError(
-                "Type of `lr_gamma` should be float, but got "
-                f"{type(training_params.lr_gamma)}."
-            )
-        lr_scheduler_fn = optax.exponential_decay(
-            init_value=training_params.lr,
-            transition_steps=training_params.lr_decay_milestones,
-            decay_rate=training_params.lr_gamma,
-            staircase=True,
-        )
-    elif len(training_params.lr_decay_milestones) > 0:
-        boundaries_and_scales: dict[int, float]
-        if isinstance(training_params.lr_gamma, float):
-            boundaries_and_scales = {
-                step: training_params.lr_gamma
-                for step in training_params.lr_decay_milestones
-            }
-        else:
-            gamma_len = len(training_params.lr_gamma)
-            decay_len = len(training_params.lr_decay_milestones)
-            if gamma_len != decay_len:
-                raise ValueError(
-                    f"Lengths of `lr_gamma` ({gamma_len}) should be the same as "
-                    f"`lr_decay_milestones` ({decay_len})"
-                )
-            boundaries_and_scales = {
-                step: gamma
-                for step, gamma in zip(
-                    training_params.lr_decay_milestones, training_params.lr_gamma
-                )
-            }
-
-        lr_scheduler_fn = optax.piecewise_constant_schedule(
-            init_value=training_params.lr, boundaries_and_scales=boundaries_and_scales
-        )
-    else:
-        lr_scheduler_fn = optax.constant_schedule(training_params.lr)
-
-    return lr_scheduler_fn
 
 
 class DQN:
@@ -100,7 +55,7 @@ class DQN:
 
         self.random_key: Array = random_key
 
-        self.lr_scheduler: optax.Schedule = create_learning_rate_fn(training_params)
+        self.lr_scheduler: optax.Schedule = _create_lr_scheduler(training_params)
         self.policy_net: nn.Module = policy_net
         self.policy_net_train_state: BNTrainState = create_train_state(
             self.random_key,
@@ -196,7 +151,7 @@ class DQN:
         expected_state_action_values: Array = jax_batch.rewards + (
             self.training_params.gamma * next_state_values
         ) * (1.0 - jax_batch.games_over)
-        self.policy_net_train_state, loss, lr = train_step(
+        self.policy_net_train_state, loss, step, lr = train_step(
             self.policy_net_train_state,
             jax_batch,
             expected_state_action_values,

@@ -1,12 +1,12 @@
 import tempfile
 
+from rl_2048.dqn import DQN
 from rl_2048.dqn.common import (
     Action,
     DQNParameters,
     TrainingParameters,
 )
 from rl_2048.dqn.replay_memory import Transition
-from rl_2048.dqn.torch.dqn import DQN
 from rl_2048.dqn.torch.net import TorchPolicyNet
 
 
