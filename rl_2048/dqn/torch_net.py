@@ -324,12 +324,11 @@ class TorchPolicyNet:
         if self.training is None:
             raise ValueError(error_msg())
 
-        step: int = self.training.step_count
         lr: float = self.training.scheduler.get_last_lr()[0]
-
         loss: torch.Tensor = compute_loss(self.training)
         optimize_step(self.training, loss)
         soft_update(self.training)
+        step: int = self.training.step_count
 
         return {"loss": loss.item(), "step": step, "lr": lr}
 

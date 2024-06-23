@@ -7,7 +7,7 @@ from rl_2048.dqn.common import (
     Batch,
     TrainingParameters,
 )
-from rl_2048.dqn.torch.net import Net, TorchPolicyNet
+from rl_2048.dqn.torch_net import Net, TorchPolicyNet
 
 
 def test_net():
@@ -72,13 +72,13 @@ def test_policy_net_parameters_same_lr_gamma(batch):
     )
     policy_net = TorchPolicyNet("layers_1024_512_256", 16, 4, training_parameters)
     metrics1 = policy_net.optimize(batch)
-    assert metrics1["step"] == 0
+    assert metrics1["step"] == 1
     assert metrics1["lr"] == pytest.approx(0.1)
     metrics2 = policy_net.optimize(batch)
-    assert metrics2["step"] == 1
+    assert metrics2["step"] == 2
     assert metrics2["lr"] == pytest.approx(0.01)
     metrics3 = policy_net.optimize(batch)
-    assert metrics3["step"] == 2
+    assert metrics3["step"] == 3
     assert metrics3["lr"] == pytest.approx(0.001)
 
 
@@ -88,13 +88,13 @@ def test_policy_net_parameters_different_lr_gamma(batch):
     )
     policy_net = TorchPolicyNet("layers_1024_512_256", 16, 4, training_parameters)
     metrics1 = policy_net.optimize(batch)
-    assert metrics1["step"] == 0
+    assert metrics1["step"] == 1
     assert metrics1["lr"] == pytest.approx(0.1)
     metrics2 = policy_net.optimize(batch)
-    assert metrics2["step"] == 1
+    assert metrics2["step"] == 2
     assert metrics2["lr"] == pytest.approx(0.05)
     metrics3 = policy_net.optimize(batch)
-    assert metrics3["step"] == 2
+    assert metrics3["step"] == 3
     assert metrics3["lr"] == pytest.approx(0.005)
 
 
@@ -105,7 +105,7 @@ def test_policy_net_parameters_constant_lr(batch):
     policy_net = TorchPolicyNet("layers_1024_512_256", 16, 4, training_parameters)
     for i in range(6):
         metrics = policy_net.optimize(batch)
-        assert metrics["step"] == i
+        assert metrics["step"] == i + 1
         assert metrics["lr"] == pytest.approx(0.1)
 
 

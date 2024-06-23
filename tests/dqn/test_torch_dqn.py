@@ -7,7 +7,7 @@ from rl_2048.dqn.common import (
     TrainingParameters,
 )
 from rl_2048.dqn.replay_memory import Transition
-from rl_2048.dqn.torch.net import TorchPolicyNet
+from rl_2048.dqn.torch_net import TorchPolicyNet
 
 
 def test_torch_dqn():

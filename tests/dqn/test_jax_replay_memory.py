@@ -1,5 +1,5 @@
 from rl_2048.dqn.common import Action
-from rl_2048.dqn.jax.net import JaxBatch, to_jax_batch
+from rl_2048.dqn.jax_net import JaxBatch, to_jax_batch
 from rl_2048.dqn.replay_memory import ReplayMemory, Transition
 
 all_memory_fields = {"states", "actions", "next_states", "rewards", "games_over"}

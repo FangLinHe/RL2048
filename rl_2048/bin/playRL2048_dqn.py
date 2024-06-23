@@ -23,10 +23,10 @@ from rl_2048.dqn.common import (
     DQNParameters,
     TrainingParameters,
 )
-from rl_2048.dqn.jax.net import JaxPolicyNet
+from rl_2048.dqn.jax_net import JaxPolicyNet
 from rl_2048.dqn.protocols import PolicyNet
 from rl_2048.dqn.replay_memory import Transition
-from rl_2048.dqn.torch.net import TorchPolicyNet
+from rl_2048.dqn.torch_net import TorchPolicyNet
 from rl_2048.dqn.utils import flat_one_hot
 from rl_2048.game_engine import GameEngine, MoveResult
 from rl_2048.tile import Tile
@@ -324,7 +324,7 @@ def train(
         lr=1e-4,
         lr_decay_milestones=[],
         lr_gamma=1.0,
-        loss_fn="huber_loss",
+        loss_fn="huber_loss" if backend == "jax" else "HuberLoss",
         TAU=0.005,
         pretrained_net_path=pretrained_net_path,
     )
@@ -424,7 +424,7 @@ def train(
 
             dqn.push_transition(transition)
             new_collect_count += 1
-            if new_collect_count >= training_params.batch_size:
+            if new_collect_count >= dqn_parameters.batch_size:
                 metrics = dqn.optimize_model()
                 if metrics is None:
                     raise AssertionError("`metrics` should not be None.")
