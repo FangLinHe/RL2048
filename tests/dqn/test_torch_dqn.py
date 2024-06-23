@@ -18,7 +18,7 @@ def test_torch_dqn():
     policy_net = TorchPolicyNet("layers_1024_512_256", 2, 4, training_parameters)
 
     with tempfile.TemporaryDirectory() as tmp_dir:
-        dqn = DQN(policy_net, dqn_parameters, tmp_dir)
+        dqn = DQN(policy_net, dqn_parameters)
 
         t1 = Transition(
             state=[1.0, 0.5],

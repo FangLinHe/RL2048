@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 
-from rl_2048.dqn.jax.utils import flat_one_hot
+from rl_2048.dqn.utils import flat_one_hot
 
 
 def test_flat_one_hot():

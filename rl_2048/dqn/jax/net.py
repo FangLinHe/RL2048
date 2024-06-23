@@ -396,7 +396,7 @@ class JaxPolicyNet:
         expected_state_action_values: Array = jax_batch.rewards + (
             self.training.params.gamma * next_state_values
         ) * (1.0 - jax_batch.games_over)
-        self.training.policy_net_train_state, loss, step, lr = train_step(
+        self.training.policy_net_train_state, loss, step_state, lr = train_step(
             self.training.policy_net_train_state,
             jax_batch,
             expected_state_action_values,
@@ -432,6 +432,8 @@ class JaxPolicyNet:
 
         self.training.step_count += 1
 
+        step: int = step_state if isinstance(step_state, int) else step_state.item()
+
         return {"loss": loss_val, "step": step, "lr": lr}
 
     def save(self, root_dir: str) -> str:
@@ -448,7 +450,7 @@ class JaxPolicyNet:
         return saved_path
 
     def load(self, model_path: str):
-        policy_net_variables = restore_checkpoint(os.path.dirname(model_path), None)
+        policy_net_variables = restore_checkpoint(model_path, None)
         self.policy_net_variables = {
             "params": policy_net_variables["params"],
             "batch_stats": policy_net_variables["batch_stats"],

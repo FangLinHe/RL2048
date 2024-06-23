@@ -177,7 +177,7 @@ def test_jax_policy_net():
         policy_net.check_correctness()
 
         with tempfile.TemporaryDirectory() as tmp_dir:
-            dqn = common_dqn.DQN(policy_net, dqn_params, tmp_dir)
+            dqn = common_dqn.DQN(policy_net, dqn_params)
 
             dqn.push_transition(t1)
             dqn.push_transition(t2)

@@ -27,25 +27,18 @@ class DQN:
         self,
         policy_net: PolicyNet,
         dqn_parameters: Optional[DQNParameters] = None,
-        output_net_dir: Optional[str] = None,
     ):
         self.policy_net: PolicyNet = policy_net
-        self.output_net_dir: Optional[str] = output_net_dir
 
         self.training: Optional[TrainingElements]
+        self.eps_threshold: float = 0.0
         if dqn_parameters is None:
-            self.output_net_dir = None
             self.training = None
         else:
-            if output_net_dir is None:
-                raise ValueError(
-                    "dqn_parameters is not None but output_net_dir is None. "
-                    "Please set output_net_dir correctly."
-                )
-            self.output_net_dir = output_net_dir
             self.training = TrainingElements(
                 dqn_parameters, ReplayMemory(dqn_parameters.memory_capacity)
             )
+            self.eps_threshold = self.training.params.eps_start
 
         self._cryptogen: SystemRandom = SystemRandom()
 
@@ -62,13 +55,13 @@ class DQN:
         if self.training is None:
             raise ValueError(self._training_none_error_msg())
 
-        eps_threshold = self.training.params.eps_end + (
+        self.eps_threshold = self.training.params.eps_end + (
             self.training.params.eps_start - self.training.params.eps_end
         ) * math.exp(
             -1.0 * self.training.optimize_steps / self.training.params.eps_decay
         )
 
-        if self._cryptogen.random() > eps_threshold:
+        if self._cryptogen.random() > self.eps_threshold:
             return self.predict(state).action
 
         return Action(self._cryptogen.randrange(len(Action)))
