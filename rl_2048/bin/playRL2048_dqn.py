@@ -16,7 +16,12 @@ import torch
 from torch import nn
 
 from rl_2048.dqn import DQN
-from rl_2048.dqn.common import Action, DQNParameters, TrainingParameters
+from rl_2048.dqn.common import (
+    PREDEFINED_NETWORKS,
+    Action,
+    DQNParameters,
+    TrainingParameters,
+)
 from rl_2048.dqn.replay_memory import Transition
 from rl_2048.dqn.torch.net import Net, TorchPolicyNet
 from rl_2048.game_engine import GameEngine, MoveResult
@@ -27,14 +32,6 @@ from rl_2048.tile_plotter import PlotProperties, TilePlotter
 class NetsTuple(NamedTuple):
     policy_net: nn.Module
     target_net: nn.Module
-
-
-PREDEFINED_NETWORKS: set[str] = {
-    "layers_1024_512_256",
-    "layers_512_512_residual_0_128",
-    "layers_512_256_128_residual_0_64_32",
-    "layers_512_256_256_residual_0_128_128",
-}
 
 
 def parse_args():

@@ -8,10 +8,9 @@ from jax import random as jrandom
 from optax import Schedule
 
 import rl_2048.dqn as common_dqn
-from rl_2048.dqn.common import Action, DQNParameters
+from rl_2048.dqn.common import PREDEFINED_NETWORKS, Action, DQNParameters
 from rl_2048.dqn.jax.dqn import DQN, TrainingParameters, _create_lr_scheduler
 from rl_2048.dqn.jax.net import (
-    PREDEFINED_NETWORKS,
     JaxBatch,
     JaxPolicyNet,
     Net,

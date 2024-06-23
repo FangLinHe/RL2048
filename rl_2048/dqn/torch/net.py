@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 
 from rl_2048.dqn.common import (
+    PREDEFINED_NETWORKS,
     Action,
     Batch,
     Metrics,
@@ -107,14 +108,6 @@ class Net(nn.Module):
 
     def forward(self, x):
         return self.net(x)
-
-
-PREDEFINED_NETWORKS: set[str] = {
-    "layers_1024_512_256",
-    "layers_512_512_residual_0_128",
-    "layers_512_256_128_residual_0_64_32",
-    "layers_512_256_256_residual_0_128_128",
-}
 
 
 class TrainingElements:

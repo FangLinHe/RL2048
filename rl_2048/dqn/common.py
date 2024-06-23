@@ -2,6 +2,13 @@ from collections.abc import Sequence
 from enum import Enum
 from typing import Any, NamedTuple, Union
 
+PREDEFINED_NETWORKS: set[str] = {
+    "layers_1024_512_256",
+    "layers_512_512_residual_0_128",
+    "layers_512_256_128_residual_0_64_32",
+    "layers_512_256_256_residual_0_128_128",
+}
+
 
 class Action(Enum):
     UP = 0

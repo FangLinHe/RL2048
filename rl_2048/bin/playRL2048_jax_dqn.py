@@ -17,12 +17,12 @@ from flax.training.checkpoints import PyTree, restore_checkpoint
 from jax import Array
 from jax import random as jrandom
 
-from rl_2048.dqn.common import Action, DQNParameters
+from rl_2048.dqn.common import PREDEFINED_NETWORKS, Action, DQNParameters
 from rl_2048.dqn.jax.dqn import (
     DQN,
     TrainingParameters,
 )
-from rl_2048.dqn.jax.net import PREDEFINED_NETWORKS, _load_predefined_net
+from rl_2048.dqn.jax.net import _load_predefined_net
 from rl_2048.dqn.jax.utils import flat_one_hot
 from rl_2048.dqn.replay_memory import Transition
 from rl_2048.game_engine import GameEngine, MoveResult

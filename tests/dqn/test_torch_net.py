@@ -3,10 +3,11 @@ import torch
 import torch.nn as nn
 
 from rl_2048.dqn.common import (
+    PREDEFINED_NETWORKS,
     Batch,
     TrainingParameters,
 )
-from rl_2048.dqn.torch.net import PREDEFINED_NETWORKS, Net, TorchPolicyNet
+from rl_2048.dqn.torch.net import Net, TorchPolicyNet
 
 
 def test_net():
