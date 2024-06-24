@@ -15,7 +15,7 @@ dependencies = [
     "matplotlib>=3.8.4",
     "jax>=0.4.16",
     "jaxlib>=0.4.16",
-    "flax>=0.8.3",
+    "flax>=0.8.4",
     "tensorboardX>=2.6.2.2",
     "jaxtyping>=0.2.29",
 ]
