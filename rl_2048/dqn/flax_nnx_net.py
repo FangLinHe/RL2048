@@ -11,12 +11,26 @@ class PolicyNet(Protocol):
     def load(self, model_path: str): ...
 """
 
-from typing import Callable, Union
+import copy
+import functools
+from collections.abc import Sequence
+from typing import Callable, Optional, Union
 
+import jax.numpy as jnp
+import numpy as np
+import optax
 from flax import nnx
 from jaxtyping import Array
 
-from rl_2048.dqn.common import PREDEFINED_NETWORKS
+from rl_2048.dqn.common import (
+    PREDEFINED_NETWORKS,
+    Action,
+    Batch,
+    Metrics,
+    PolicyNetOutput,
+    TrainingParameters,
+)
+from rl_2048.dqn.jax_utils import JaxBatch, _create_lr_scheduler, to_jax_batch
 
 
 class ResidualBlock(nnx.Module):
@@ -143,3 +157,114 @@ def _load_predefined_net(
         rngs,
     )
     return policy_net
+
+
+class TrainingElements:
+    """Class for keeping track of training variables"""
+
+    def __init__(
+        self,
+        training_params: TrainingParameters,
+        policy_net: Net,
+    ):
+        self.target_net: Net = copy.deepcopy(policy_net)
+        self.params: TrainingParameters = training_params
+        self.loss_fn: Callable = getattr(optax, training_params.loss_fn)
+
+        self.lr_scheduler: optax.ScalarOrSchedule = _create_lr_scheduler(
+            training_params
+        )
+        optimizer_fn: Callable = getattr(optax, training_params.optimizer)
+        tx: optax.GradientTransformation = optimizer_fn(self.lr_scheduler)
+        self.state = nnx.Optimizer(policy_net, tx)
+
+        self.step_count: int = 0
+
+
+@functools.partial(nnx.jit, static_argnums=(4,))
+def _train_step(
+    model: Net,
+    optimizer: nnx.Optimizer,
+    jax_batch: JaxBatch,
+    target: Array,
+    loss_fn: Callable,
+) -> Array:
+    """Train for a single step."""
+
+    def f(model: Net, jax_batch: JaxBatch, target: Array, loss_fn: Callable):
+        raw_pred: Array = model(jax_batch.states)
+        predictions: Array = jnp.take_along_axis(raw_pred, jax_batch.actions, axis=1)
+        return loss_fn(predictions, target).mean()
+
+    grad_fn = nnx.value_and_grad(f, has_aux=False)
+    loss, grads = grad_fn(model, jax_batch, target, loss_fn)
+    optimizer.update(grads)
+
+    return loss
+
+
+class FlaxNnxPolicyNet:
+    """
+    Implements protocal `PolicyNet` with flax.nnx (see rl_2048/dqn/protocols.py)
+    """
+
+    def __init__(
+        self,
+        network_version: str,
+        in_features: int,
+        out_features: int,
+        rngs: nnx.Rngs,
+        training_params: Optional[TrainingParameters] = None,
+    ):
+        self.policy_net: Net = _load_predefined_net(
+            network_version, in_features, out_features, rngs
+        )
+
+        self.training: Optional[TrainingElements]
+        if training_params is None:
+            self.training = None
+        else:
+            self.training = TrainingElements(training_params, self.policy_net)
+
+    def predict(self, feature: Sequence[float]) -> PolicyNetOutput:
+        feature_array: Array = jnp.array(np.array(feature))[None, :]
+        raw_values: Array = self.policy_net(feature_array)[0]
+
+        best_action: int = jnp.argmax(raw_values).item()
+        best_value: float = raw_values[best_action].item()
+        return PolicyNetOutput(best_value, Action(best_action))
+
+    def not_training_error_msg(self) -> str:
+        return (
+            "TorchPolicyNet is not initailized with training_params. "
+            "This function is not supported."
+        )
+
+    def optimize(self, batch: Batch) -> Metrics:
+        if self.training is None:
+            raise ValueError(self.not_training_error_msg())
+
+        jax_batch: JaxBatch = to_jax_batch(batch)
+        next_value_predictions: Array = self.training.target_net(jax_batch.next_states)
+        next_state_values: Array = next_value_predictions.max(axis=1, keepdims=True)
+        expected_state_action_values: Array = jax_batch.rewards + (
+            self.training.params.gamma * next_state_values
+        ) * (1.0 - jax_batch.games_over)
+
+        step: int = self.training.state.step.raw_value.item()
+        lr: float = self.training.lr_scheduler(step)
+        loss: Array = _train_step(
+            self.policy_net,
+            self.training.state,
+            jax_batch,
+            expected_state_action_values,
+            self.training.loss_fn,
+        )
+
+        return {"loss": loss.item(), "step": step, "lr": lr}
+
+    def save(self, filename_prefix: str) -> str:
+        raise NotImplementedError
+
+    def load(self, model_path: str):
+        raise NotImplementedError
