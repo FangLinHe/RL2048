@@ -323,13 +323,6 @@ class JaxPolicyNet:
     Implements protocal `PolicyNet` with Jax (see rl_2048/dqn/protocols.py)
     """
 
-    policy_net: Net
-    policy_net_apply: Callable
-    policy_net_variables: PyTree
-
-    random_key: Array
-    training: Optional[TrainingElements]
-
     def __init__(
         self,
         network_version: str,
@@ -338,10 +331,12 @@ class JaxPolicyNet:
         random_key: Array,
         training_params: Optional[TrainingParameters] = None,
     ):
-        self.policy_net = _load_predefined_net(network_version, out_features)
-        self.policy_net_apply = jax.jit(self.policy_net.apply)
+        self.policy_net: Net = _load_predefined_net(network_version, out_features)
+        self.policy_net_apply: Callable = jax.jit(self.policy_net.apply)
+        self.policy_net_variables: PyTree = {}
 
-        self.random_key = random_key
+        self.random_key: Array = random_key
+        self.training: Optional[TrainingElements]
 
         if training_params is None:
             self.training = None
