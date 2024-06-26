@@ -244,8 +244,6 @@ class FlaxNnxPolicyNet(PolicyNet):
             self.training.params.gamma * next_state_values
         ) * (1.0 - jax_batch.games_over)
 
-        step: int = self.training.state.step.raw_value.item()
-        lr: float = self.training.lr_scheduler(step)
         loss: Array = _train_step(
             self.policy_net,
             self.training.state,
@@ -253,6 +251,8 @@ class FlaxNnxPolicyNet(PolicyNet):
             expected_state_action_values,
             self.training.loss_fn,
         )
+        step: int = self.training.state.step.raw_value.item()
+        lr: float = self.training.lr_scheduler(step)
 
         return {"loss": loss.item(), "step": step, "lr": lr}
 

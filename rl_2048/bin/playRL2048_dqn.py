@@ -12,6 +12,7 @@ from random import shuffle
 from typing import Any
 
 import pygame
+from flax.nnx import Rngs
 from jax import Array
 from jax import random as jrandom
 from tensorboardX import SummaryWriter
@@ -23,6 +24,7 @@ from rl_2048.dqn.common import (
     DQNParameters,
     TrainingParameters,
 )
+from rl_2048.dqn.flax_nnx_net import FlaxNnxPolicyNet
 from rl_2048.dqn.jax_net import JaxPolicyNet
 from rl_2048.dqn.protocols import PolicyNet
 from rl_2048.dqn.replay_memory import Transition
@@ -32,7 +34,7 @@ from rl_2048.game_engine import GameEngine, MoveResult
 from rl_2048.tile import Tile
 from rl_2048.tile_plotter import PlotProperties, TilePlotter
 
-SUPPORTED_BACKENDS: set[str] = {"jax", "torch"}
+SUPPORTED_BACKENDS: set[str] = {"flax.nnx", "flax.linen", "torch"}
 
 
 def parse_args():
@@ -87,7 +89,7 @@ def parse_args():
     parser.add_argument(
         "--backend",
         type=str,
-        default="jax",
+        default="flax.nnx",
         help="Backend implementation of policy network. "
         f"Should be in {SUPPORTED_BACKENDS}",
     )
@@ -150,7 +152,10 @@ def eval_dqn(
     out_features: int = len(Action)
 
     policy_net: PolicyNet
-    if backend == "jax":
+    if backend == "flax.nnx":
+        rngs: Rngs = Rngs(params=0)
+        policy_net = FlaxNnxPolicyNet(network_version, in_features, out_features, rngs)
+    elif backend == "flax.linen":
         rng: Array = jrandom.key(0)
         policy_net = JaxPolicyNet(network_version, in_features, out_features, rng)
     else:
@@ -324,7 +329,7 @@ def train(
         lr=1e-4,
         lr_decay_milestones=[],
         lr_gamma=1.0,
-        loss_fn="huber_loss" if backend == "jax" else "HuberLoss",
+        loss_fn="HuberLoss" if backend == "torch" else "huber_loss",
         TAU=0.005,
         pretrained_net_path=pretrained_net_path,
     )
@@ -345,7 +350,12 @@ def train(
 
     # Policy net and DQN
     policy_net: PolicyNet
-    if backend == "jax":
+    if backend == "flax.nnx":
+        rngs: Rngs = Rngs(params=0)
+        policy_net = FlaxNnxPolicyNet(
+            network_version, in_features, out_features, rngs, training_params
+        )
+    elif backend == "flax.linen":
         rng: Array = jrandom.key(0)
         policy_net = JaxPolicyNet(
             network_version, in_features, out_features, rng, training_params
