@@ -1,7 +1,7 @@
 import functools
 import os
 from collections.abc import Mapping, Sequence
-from typing import Any, Callable, NamedTuple, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import jax
 import jax.numpy as jnp
@@ -24,6 +24,8 @@ from rl_2048.dqn.common import (
     PolicyNetOutput,
     TrainingParameters,
 )
+from rl_2048.dqn.jax_utils import JaxBatch, _create_lr_scheduler, to_jax_batch
+from rl_2048.dqn.protocols import PolicyNet
 
 Params: TypeAlias = FrozenDict[str, Any]
 Variables: TypeAlias = Union[FrozenDict[str, Mapping[str, Any]], dict[str, Any]]
@@ -132,24 +134,6 @@ def create_train_state(
     )
 
 
-class JaxBatch(NamedTuple):
-    states: Array
-    actions: Array
-    next_states: Array
-    rewards: Array
-    games_over: Array
-
-
-def to_jax_batch(batch: Batch) -> JaxBatch:
-    return JaxBatch(
-        states=jnp.array(np.array(batch.states)),
-        actions=jnp.array(np.array(batch.actions), dtype=jnp.int32).reshape((-1, 1)),
-        next_states=jnp.array(np.array(batch.next_states)),
-        rewards=jnp.array(np.array(batch.rewards)).reshape((-1, 1)),
-        games_over=jnp.array(np.array(batch.games_over)).reshape((-1, 1)),
-    )
-
-
 @functools.partial(jax.jit, static_argnums=(3, 4))
 def train_step(
     train_state: BNTrainState,
@@ -235,52 +219,6 @@ def _load_predefined_net(network_version: str, out_features: int) -> Net:
     return policy_net
 
 
-def _create_lr_scheduler(training_params: TrainingParameters) -> optax.Schedule:
-    """Creates learning rate schedule."""
-    lr_scheduler_fn: optax.Schedule
-    if isinstance(training_params.lr_decay_milestones, int):
-        if not isinstance(training_params.lr_gamma, float):
-            raise ValueError(
-                "Type of `lr_gamma` should be float, but got "
-                f"{type(training_params.lr_gamma)}."
-            )
-        lr_scheduler_fn = optax.exponential_decay(
-            init_value=training_params.lr,
-            transition_steps=training_params.lr_decay_milestones,
-            decay_rate=training_params.lr_gamma,
-            staircase=True,
-        )
-    elif len(training_params.lr_decay_milestones) > 0:
-        boundaries_and_scales: dict[int, float]
-        if isinstance(training_params.lr_gamma, float):
-            boundaries_and_scales = {
-                step: training_params.lr_gamma
-                for step in training_params.lr_decay_milestones
-            }
-        else:
-            gamma_len = len(training_params.lr_gamma)
-            decay_len = len(training_params.lr_decay_milestones)
-            if gamma_len != decay_len:
-                raise ValueError(
-                    f"Lengths of `lr_gamma` ({gamma_len}) should be the same as "
-                    f"`lr_decay_milestones` ({decay_len})"
-                )
-            boundaries_and_scales = {
-                step: gamma
-                for step, gamma in zip(
-                    training_params.lr_decay_milestones, training_params.lr_gamma
-                )
-            }
-
-        lr_scheduler_fn = optax.piecewise_constant_schedule(
-            init_value=training_params.lr, boundaries_and_scales=boundaries_and_scales
-        )
-    else:
-        lr_scheduler_fn = optax.constant_schedule(training_params.lr)
-
-    return lr_scheduler_fn
-
-
 class TrainingElements:
     """Class for keeping track of training variables"""
 
@@ -318,17 +256,10 @@ class TrainingElements:
         self.step_count = 0
 
 
-class JaxPolicyNet:
+class JaxPolicyNet(PolicyNet):
     """
     Implements protocal `PolicyNet` with Jax (see rl_2048/dqn/protocols.py)
     """
-
-    policy_net: Net
-    policy_net_apply: Callable
-    policy_net_variables: PyTree
-
-    random_key: Array
-    training: Optional[TrainingElements]
 
     def __init__(
         self,
@@ -338,10 +269,12 @@ class JaxPolicyNet:
         random_key: Array,
         training_params: Optional[TrainingParameters] = None,
     ):
-        self.policy_net = _load_predefined_net(network_version, out_features)
-        self.policy_net_apply = jax.jit(self.policy_net.apply)
+        self.policy_net: Net = _load_predefined_net(network_version, out_features)
+        self.policy_net_apply: Callable = jax.jit(self.policy_net.apply)
+        self.policy_net_variables: PyTree = {}
 
-        self.random_key = random_key
+        self.random_key: Array = random_key
+        self.training: Optional[TrainingElements]
 
         if training_params is None:
             self.training = None
@@ -353,12 +286,12 @@ class JaxPolicyNet:
     def check_correctness(self):
         self.policy_net.check_correctness()
 
-    def predict(self, state: Sequence[float]) -> PolicyNetOutput:
-        input_state = jnp.array(np.array(state))[None, :]
+    def predict(self, state_feature: Sequence[float]) -> PolicyNetOutput:
+        state_array: Array = jnp.array(np.array(state_feature))[None, :]
         if self.training is None:
             raw_values: Array = self.policy_net_apply(
                 self.policy_net_variables,
-                input_state,
+                state_array,
             )[0]
         else:
             net_train_states = self.training.policy_net_train_state
@@ -369,7 +302,7 @@ class JaxPolicyNet:
 
             raw_values = net_train_states.apply_fn(
                 net_params,
-                x=input_state,
+                x=state_array,
                 train=False,
             )[0]
 
@@ -436,12 +369,11 @@ class JaxPolicyNet:
 
         return {"loss": loss_val, "step": step, "lr": lr}
 
-    def save(self, root_dir: str) -> str:
+    def save(self, model_path: str) -> str:
         if self.training is None:
             raise ValueError(self.error_msg())
-        ckpt_dir: str = os.path.abspath(root_dir)
         saved_path: str = save_checkpoint(
-            ckpt_dir=ckpt_dir,
+            ckpt_dir=model_path,
             target=self.training.policy_net_train_state,
             step=self.training.step_count,
             keep=10,

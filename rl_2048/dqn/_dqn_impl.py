@@ -42,8 +42,8 @@ class DQN:
 
         self._cryptogen: SystemRandom = SystemRandom()
 
-    def predict(self, state: Sequence[float]) -> PolicyNetOutput:
-        return self.policy_net.predict(state)
+    def predict(self, state_feature: Sequence[float]) -> PolicyNetOutput:
+        return self.policy_net.predict(state_feature)
 
     def _training_none_error_msg(self) -> str:
         return (
@@ -51,7 +51,7 @@ class DQN:
             "This function is not supported."
         )
 
-    def get_action_epsilon_greedy(self, state: Sequence[float]) -> Action:
+    def get_action_epsilon_greedy(self, state_feature: Sequence[float]) -> Action:
         if self.training is None:
             raise ValueError(self._training_none_error_msg())
 
@@ -62,7 +62,7 @@ class DQN:
         )
 
         if self._cryptogen.random() > self.eps_threshold:
-            return self.predict(state).action
+            return self.predict(state_feature).action
 
         return Action(self._cryptogen.randrange(len(Action)))
 
