@@ -14,11 +14,12 @@ class PolicyNet(Protocol):
 import copy
 import functools
 from collections.abc import Sequence
-from typing import Callable, Optional, Union
+from typing import Callable, Optional
 
 import jax.numpy as jnp
 import numpy as np
 import optax
+import orbax.checkpoint as orbax
 from flax import nnx
 from jaxtyping import Array
 
@@ -101,9 +102,9 @@ class Net(nnx.Module):
 
         validate_args()
 
-        layers: list[nnx.Module] = []
+        layers: list[Callable] = []
         for residual_mid_dim, hidden_dim in zip(residual_mid_dims, hidden_dims):
-            block: list[Union[nnx.Module, Callable]] = []
+            block: list[Callable] = []
             if residual_mid_dim == 0:
                 block.append(nnx.Linear(in_dim, hidden_dim, use_bias=False, rngs=rngs))
                 block.append(nnx.BatchNorm(hidden_dim, rngs=rngs))
@@ -226,6 +227,8 @@ class FlaxNnxPolicyNet:
         else:
             self.training = TrainingElements(training_params, self.policy_net)
 
+        self.checkpointer: orbax.Checkpointer = orbax.StandardCheckpointer()
+
     def predict(self, feature: Sequence[float]) -> PolicyNetOutput:
         feature_array: Array = jnp.array(np.array(feature))[None, :]
         raw_values: Array = self.policy_net(feature_array)[0]
@@ -263,8 +266,18 @@ class FlaxNnxPolicyNet:
 
         return {"loss": loss.item(), "step": step, "lr": lr}
 
-    def save(self, filename_prefix: str) -> str:
-        raise NotImplementedError
+    def save(self, root_dir: str) -> str:
+        if self.training is None:
+            raise ValueError(self.not_training_error_msg())
+        state = nnx.state(self.policy_net)
+        # Save the parameters
+        saved_path: str = f"{root_dir}/state"
+        self.checkpointer.save(saved_path, state)
+        return saved_path
 
     def load(self, model_path: str):
-        raise NotImplementedError
+        state = nnx.state(self.policy_net)
+        # Load the parameters
+        state = self.checkpointer.restore(model_path, item=state)
+        # update the model with the loaded state
+        nnx.update(self.policy_net, state)

@@ -85,7 +85,7 @@ def test_jax_policy_net(rngs: nnx.Rngs):
     )
     training_params = TrainingParameters(
         gamma=0.99,
-        lr=0.001,
+        lr=0.1,
     )
     t1 = Transition(
         state=jrandom.normal(rngs.params(), shape=(input_dim,)).tolist(),
@@ -102,14 +102,14 @@ def test_jax_policy_net(rngs: nnx.Rngs):
         game_over=False,
     )
 
-    # test_state = jrandom.normal(rng, shape=(input_dim,)).tolist()
+    test_feature = jrandom.normal(rngs.params(), shape=(input_dim,)).tolist()
 
     for network_version in PREDEFINED_NETWORKS:
         policy_net = FlaxNnxPolicyNet(
             network_version, input_dim, output_dim, rngs, training_params
         )
 
-        with tempfile.TemporaryDirectory() as _tmp_dir:
+        with tempfile.TemporaryDirectory() as tmp_dir:
             dqn = DQN(policy_net, dqn_params)
 
             dqn.push_transition(t1)
@@ -119,12 +119,17 @@ def test_jax_policy_net(rngs: nnx.Rngs):
 
             _ = dqn.get_action_epsilon_greedy(t2.state)
 
-            # model_path = dqn.save_model(tmp_dir)
-            # dqn.load_model(model_path)
+            model_path = dqn.save_model(tmp_dir)
 
-            # dqn_load_model = DQN(policy_net)
-            # dqn_load_model.load_model(model_path)
+            policy_net_2 = FlaxNnxPolicyNet(
+                network_version, input_dim, output_dim, rngs
+            )
+            dqn_load_model = DQN(policy_net_2)
+            assert dqn_load_model.predict(test_feature).expected_value != pytest.approx(
+                dqn.predict(test_feature).expected_value
+            )
+            dqn_load_model.load_model(model_path)
 
-            # assert dqn_load_model.predict(test_state).expected_value == pytest.approx(
-            #     dqn.predict(test_state).expected_value
-            # )
+            assert dqn_load_model.predict(test_feature).expected_value == pytest.approx(
+                dqn.predict(test_feature).expected_value
+            )

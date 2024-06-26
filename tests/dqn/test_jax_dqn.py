@@ -165,7 +165,7 @@ def test_jax_policy_net():
         game_over=False,
     )
 
-    test_state = jrandom.normal(rng, shape=(input_dim,)).tolist()
+    test_feature = jrandom.normal(rng, shape=(input_dim,)).tolist()
 
     for network_version in PREDEFINED_NETWORKS:
         policy_net = JaxPolicyNet(
@@ -184,11 +184,11 @@ def test_jax_policy_net():
             _ = dqn.get_action_epsilon_greedy(t2.state)
 
             model_path = dqn.save_model(tmp_dir)
-            dqn.load_model(model_path)
 
-            dqn_load_model = common_dqn.DQN(policy_net)
+            policy_net_2 = JaxPolicyNet(network_version, input_dim, output_dim, rng)
+            dqn_load_model = common_dqn.DQN(policy_net_2)
             dqn_load_model.load_model(model_path)
 
-            assert dqn_load_model.predict(test_state).expected_value == pytest.approx(
-                dqn.predict(test_state).expected_value
+            assert dqn_load_model.predict(test_feature).expected_value == pytest.approx(
+                dqn.predict(test_feature).expected_value
             )
