@@ -1,14 +1,5 @@
 """
-Implement the following protocol
-
-class PolicyNet(Protocol):
-    def predict(self, feature: Sequence[float]) -> PolicyNetOutput: ...
-
-    def optimize(self, batch: Batch) -> Metrics: ...
-
-    def save(self, filename_prefix: str) -> str: ...
-
-    def load(self, model_path: str): ...
+Implement the protocol `PolicyNet` with flax.nnx
 """
 
 import copy
@@ -32,6 +23,7 @@ from rl_2048.dqn.common import (
     TrainingParameters,
 )
 from rl_2048.dqn.jax_utils import JaxBatch, _create_lr_scheduler, to_jax_batch
+from rl_2048.dqn.protocols import PolicyNet
 
 
 class ResidualBlock(nnx.Module):
@@ -172,9 +164,7 @@ class TrainingElements:
         self.params: TrainingParameters = training_params
         self.loss_fn: Callable = getattr(optax, training_params.loss_fn)
 
-        self.lr_scheduler: optax.ScalarOrSchedule = _create_lr_scheduler(
-            training_params
-        )
+        self.lr_scheduler: optax.Schedule = _create_lr_scheduler(training_params)
         optimizer_fn: Callable = getattr(optax, training_params.optimizer)
         tx: optax.GradientTransformation = optimizer_fn(self.lr_scheduler)
         self.state = nnx.Optimizer(policy_net, tx)
@@ -204,7 +194,7 @@ def _train_step(
     return loss
 
 
-class FlaxNnxPolicyNet:
+class FlaxNnxPolicyNet(PolicyNet):
     """
     Implements protocal `PolicyNet` with flax.nnx (see rl_2048/dqn/protocols.py)
     """
@@ -229,9 +219,9 @@ class FlaxNnxPolicyNet:
 
         self.checkpointer: orbax.Checkpointer = orbax.StandardCheckpointer()
 
-    def predict(self, feature: Sequence[float]) -> PolicyNetOutput:
-        feature_array: Array = jnp.array(np.array(feature))[None, :]
-        raw_values: Array = self.policy_net(feature_array)[0]
+    def predict(self, state_feature: Sequence[float]) -> PolicyNetOutput:
+        state_array: Array = jnp.array(np.array(state_feature))[None, :]
+        raw_values: Array = self.policy_net(state_array)[0]
 
         best_action: int = jnp.argmax(raw_values).item()
         best_value: float = raw_values[best_action].item()
@@ -266,12 +256,12 @@ class FlaxNnxPolicyNet:
 
         return {"loss": loss.item(), "step": step, "lr": lr}
 
-    def save(self, root_dir: str) -> str:
+    def save(self, model_path: str) -> str:
         if self.training is None:
             raise ValueError(self.not_training_error_msg())
         state = nnx.state(self.policy_net)
         # Save the parameters
-        saved_path: str = f"{root_dir}/state"
+        saved_path: str = f"{model_path}/state"
         self.checkpointer.save(saved_path, state)
         return saved_path
 

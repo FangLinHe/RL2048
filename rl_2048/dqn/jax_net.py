@@ -25,6 +25,7 @@ from rl_2048.dqn.common import (
     TrainingParameters,
 )
 from rl_2048.dqn.jax_utils import JaxBatch, _create_lr_scheduler, to_jax_batch
+from rl_2048.dqn.protocols import PolicyNet
 
 Params: TypeAlias = FrozenDict[str, Any]
 Variables: TypeAlias = Union[FrozenDict[str, Mapping[str, Any]], dict[str, Any]]
@@ -255,7 +256,7 @@ class TrainingElements:
         self.step_count = 0
 
 
-class JaxPolicyNet:
+class JaxPolicyNet(PolicyNet):
     """
     Implements protocal `PolicyNet` with Jax (see rl_2048/dqn/protocols.py)
     """
@@ -285,12 +286,12 @@ class JaxPolicyNet:
     def check_correctness(self):
         self.policy_net.check_correctness()
 
-    def predict(self, state: Sequence[float]) -> PolicyNetOutput:
-        input_state = jnp.array(np.array(state))[None, :]
+    def predict(self, state_feature: Sequence[float]) -> PolicyNetOutput:
+        state_array: Array = jnp.array(np.array(state_feature))[None, :]
         if self.training is None:
             raw_values: Array = self.policy_net_apply(
                 self.policy_net_variables,
-                input_state,
+                state_array,
             )[0]
         else:
             net_train_states = self.training.policy_net_train_state
@@ -301,7 +302,7 @@ class JaxPolicyNet:
 
             raw_values = net_train_states.apply_fn(
                 net_params,
-                x=input_state,
+                x=state_array,
                 train=False,
             )[0]
 
@@ -368,12 +369,11 @@ class JaxPolicyNet:
 
         return {"loss": loss_val, "step": step, "lr": lr}
 
-    def save(self, root_dir: str) -> str:
+    def save(self, model_path: str) -> str:
         if self.training is None:
             raise ValueError(self.error_msg())
-        ckpt_dir: str = os.path.abspath(root_dir)
         saved_path: str = save_checkpoint(
-            ckpt_dir=ckpt_dir,
+            ckpt_dir=model_path,
             target=self.training.policy_net_train_state,
             step=self.training.step_count,
             keep=10,

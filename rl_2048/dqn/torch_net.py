@@ -12,6 +12,7 @@ from rl_2048.dqn.common import (
     PolicyNetOutput,
     TrainingParameters,
 )
+from rl_2048.dqn.protocols import PolicyNet
 
 
 class Residual(nn.Module):
@@ -219,7 +220,7 @@ def load_nets(
     return (policy_net, target_net)
 
 
-class TorchPolicyNet:
+class TorchPolicyNet(PolicyNet):
     """
     Implements protocal `PolicyNet` with PyTorch (see rl_2048/dqn/protocols.py)
     """
@@ -247,7 +248,7 @@ class TorchPolicyNet:
                 self.policy_net.parameters(), training_params
             )
 
-    def predict(self, feature: Sequence[float]) -> PolicyNetOutput:
+    def predict(self, state_feature: Sequence[float]) -> PolicyNetOutput:
         """Predict best action given a feature array.
 
         Args:
@@ -256,10 +257,10 @@ class TorchPolicyNet:
         Returns:
             PolicyNetOutput: Output of policy net (best action and its expected value)
         """
-        torch_tensor: torch.Tensor = torch.tensor(feature).view((1, -1))
+        state_tensor: torch.Tensor = torch.tensor(state_feature).view((1, -1))
         training_mode: bool = self.policy_net.training
         self.policy_net.eval()
-        best_value, best_action = self.policy_net.forward(torch_tensor).max(1)
+        best_value, best_action = self.policy_net.forward(state_tensor).max(1)
         self.policy_net.train(training_mode)
         return PolicyNetOutput(best_value.item(), Action(best_action.item()))
 
@@ -332,10 +333,11 @@ class TorchPolicyNet:
 
         return {"loss": loss.item(), "step": step, "lr": lr}
 
-    def save(self, filename_prefix: str = "policy_net") -> str:
-        save_path: str = f"{filename_prefix}.pth"
-        torch.save(self.policy_net.state_dict(), save_path)
-        return save_path
+    def save(self, model_path: str) -> str:
+        if not model_path.endswith(".pth"):
+            model_path = f"{model_path}.pth"
+        torch.save(self.policy_net.state_dict(), model_path)
+        return model_path
 
     def load(self, model_path: str):
         self.policy_net.load_state_dict(torch.load(model_path))
