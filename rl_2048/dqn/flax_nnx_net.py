@@ -4,14 +4,15 @@ Implement the protocol `PolicyNet` with flax.nnx
 
 import copy
 import functools
+import os
 from collections.abc import Sequence
 from typing import Callable, Optional
 
 import jax.numpy as jnp
 import numpy as np
 import optax
-import orbax.checkpoint as orbax
 from flax import nnx
+from flax.training.checkpoints import restore_checkpoint, save_checkpoint
 from jaxtyping import Array
 
 from rl_2048.dqn.common import (
@@ -169,8 +170,6 @@ class TrainingElements:
         tx: optax.GradientTransformation = optimizer_fn(self.lr_scheduler)
         self.state = nnx.Optimizer(policy_net, tx)
 
-        self.step_count: int = 0
-
 
 @functools.partial(nnx.jit, static_argnums=(4,))
 def _train_step(
@@ -217,8 +216,6 @@ class FlaxNnxPolicyNet(PolicyNet):
         else:
             self.training = TrainingElements(training_params, self.policy_net)
 
-        self.checkpointer: orbax.Checkpointer = orbax.StandardCheckpointer()
-
     def predict(self, state_feature: Sequence[float]) -> PolicyNetOutput:
         state_array: Array = jnp.array(np.array(state_feature))[None, :]
         raw_values: Array = self.policy_net(state_array)[0]
@@ -259,15 +256,22 @@ class FlaxNnxPolicyNet(PolicyNet):
     def save(self, model_path: str) -> str:
         if self.training is None:
             raise ValueError(self.not_training_error_msg())
-        state = nnx.state(self.policy_net)
-        # Save the parameters
-        saved_path: str = f"{model_path}/state"
-        self.checkpointer.save(saved_path, state)
+
+        state: nnx.State = nnx.state(self.policy_net)
+        saved_path: str = save_checkpoint(
+            ckpt_dir=os.path.abspath(model_path),
+            target=state,
+            step=self.training.state.step.raw_value.item(),
+            keep=10,
+        )
         return saved_path
 
     def load(self, model_path: str):
         state = nnx.state(self.policy_net)
         # Load the parameters
-        state = self.checkpointer.restore(model_path, item=state)
+        state = restore_checkpoint(
+            ckpt_dir=os.path.dirname(model_path),
+            target=state,
+        )
         # update the model with the loaded state
         nnx.update(self.policy_net, state)

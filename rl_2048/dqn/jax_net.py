@@ -373,7 +373,7 @@ class JaxPolicyNet(PolicyNet):
         if self.training is None:
             raise ValueError(self.error_msg())
         saved_path: str = save_checkpoint(
-            ckpt_dir=model_path,
+            ckpt_dir=os.path.abspath(model_path),
             target=self.training.policy_net_train_state,
             step=self.training.step_count,
             keep=10,
