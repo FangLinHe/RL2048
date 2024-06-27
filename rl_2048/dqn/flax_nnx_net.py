@@ -2,7 +2,6 @@
 Implement the protocol `PolicyNet` with flax.nnx
 """
 
-import copy
 import functools
 import os
 from collections.abc import Sequence
@@ -13,6 +12,7 @@ import numpy as np
 import optax
 from flax import nnx
 from flax.training.checkpoints import restore_checkpoint, save_checkpoint
+from jax.tree_util import tree_map
 from jaxtyping import Array
 
 from rl_2048.dqn.common import (
@@ -160,8 +160,10 @@ class TrainingElements:
         self,
         training_params: TrainingParameters,
         policy_net: Net,
+        target_net: Net,
     ):
-        self.target_net: Net = copy.deepcopy(policy_net)
+        self.target_net: Net = target_net
+        self.target_net.eval()
         self.params: TrainingParameters = training_params
         self.loss_fn: Callable = getattr(optax, training_params.loss_fn)
 
@@ -214,11 +216,18 @@ class FlaxNnxPolicyNet(PolicyNet):
         if training_params is None:
             self.training = None
         else:
-            self.training = TrainingElements(training_params, self.policy_net)
+            target_net: Net = _load_predefined_net(
+                network_version, in_features, out_features, rngs
+            )
+            self.training = TrainingElements(
+                training_params, self.policy_net, target_net
+            )
 
     def predict(self, state_feature: Sequence[float]) -> PolicyNetOutput:
         state_array: Array = jnp.array(np.array(state_feature))[None, :]
+        self.policy_net.eval()
         raw_values: Array = self.policy_net(state_array)[0]
+        self.policy_net.train()
 
         best_action: int = jnp.argmax(raw_values).item()
         best_value: float = raw_values[best_action].item()
@@ -248,7 +257,19 @@ class FlaxNnxPolicyNet(PolicyNet):
             expected_state_action_values,
             self.training.loss_fn,
         )
-        step: int = self.training.state.step.raw_value.item()
+
+        # Soft update of the target network's weights
+        # θ′ ← τ θ + (1 −τ )θ′
+        tau: float = self.training.params.TAU
+        target_net_state = tree_map(
+            lambda p, tp: p * tau + tp * (1 - tau),
+            nnx.state(self.policy_net),
+            nnx.state(self.training.target_net),
+        )
+
+        nnx.update(self.training.target_net, target_net_state)
+
+        step: int = self.training.state.step.value
         lr: float = self.training.lr_scheduler(step)
 
         return {"loss": loss.item(), "step": step, "lr": lr}
@@ -261,7 +282,7 @@ class FlaxNnxPolicyNet(PolicyNet):
         saved_path: str = save_checkpoint(
             ckpt_dir=os.path.abspath(model_path),
             target=state,
-            step=self.training.state.step.raw_value.item(),
+            step=self.training.state.step.value,
             keep=10,
         )
         return saved_path
@@ -275,3 +296,7 @@ class FlaxNnxPolicyNet(PolicyNet):
         )
         # update the model with the loaded state
         nnx.update(self.policy_net, state)
+
+        if self.training is not None:
+            self.training.state.step.value = 0
+            nnx.update(self.training.target_net, state)
